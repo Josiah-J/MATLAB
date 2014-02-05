@@ -2,7 +2,7 @@
 % Each elevation beam is allocated a given frequency.  The transmitted
 % waveform is generated such that all the beams are encoded in one pulse.
 % The 3D sonar volume is built by processing the returns from each beam
-% using conventional 2D beamforming techniques.  
+% using conventional 2D beamforming techniques.
 % Note:
 % No basebanding of the received data is performed.
 % Spatial beamforming precedes pulse compression.
@@ -21,7 +21,7 @@ szAxLabel2 = 14;
 autoNFComp = 1; 
 
 % Debug mode
-debug = 0;
+debug = 1;
 
 %% GENERAL SONAR OPTIONS
 
@@ -277,82 +277,89 @@ end;
 w = w*ones(1, n);
 stu = stu.*w;
 
-%% BASEBANDING
+%% NEAR-FIELD COMPENSATION
 
-% Baseband conversion
-stuphi = zeros(rx.M, n, tx.N);
+RxToFocalRange.x = Rc - rx.Pos.x(rx.Ref);
+RxToFocalRange.y = -rx.Pos.y(rx.Ref);
+RxToFocalRange.z = -rx.Pos.z(rx.Ref);
+RxToFocalRange.r = sqrt(RxToFocalRange.x^2 + RxToFocalRange.y^2 + RxToFocalRange.z^2);
 
-for i = 1:tx.N
-    %fprintf('Beam band: %.2f kHz - %.2f kHz\n', tx.Beam.f0(i)/1000.0, tx.Beam.f1(i)/1000);
+if RxToFocalRange.r < rx.Beam.Fresnel && autoNFComp == 1
     
-    bbKernel = ones(rx.M, 1)*exp(-1j*2*pi*tx.Beam.fc(i)*t);
-    temp = stu.*bbKernel;
-    
-    ftemp = fftshift((fft(temp.')).',2).*(ones(rx.M,1)*(abs(f) <= tx.Beam.B/2));
-    
-    stuphi(:, :, i) = (ifft(fftshift(ftemp,2).')).';
-    
-    if (i == (tx.N-1)/2+1 && debug == 1)     
-        figure('name', 'The received signal')
-        plot(t, real(stu(rx.Ref,:)));
-        title(['Received signal at ', num2str(tx.Beam.angle(i)*180/pi), ' deg'], 'fontsize', szAxLabel2)
-        xlabel('Time, t [s]', 'fontsize', szAxLabel1)
-        ylabel('Amplitude (Real), p(t)', 'fontsize', szAxLabel1)
-        h_fig=get(gcf,'CurrentAxes');
-        set(h_fig, 'fontsize', szAxScale);
-        axis 'square'; axis tight;
-        
-        figure('name', 'The received signal after basebanding')
-        plot(t, real(stuphi(rx.Ref,:,i)));
-        title(['Received signal after basebanding at ', num2str(tx.Beam.angle(i)*180/pi), ' deg'], 'fontsize', szAxLabel2)
-        xlabel('Time, t [s]', 'fontsize', szAxLabel1)
-        ylabel('Amplitude (Real), p(t)', 'fontsize', szAxLabel1)
-        h_fig=get(gcf,'CurrentAxes');
-        set(h_fig, 'fontsize', szAxScale);
-        axis 'square'; axis tight;
-        
-        figure('name', 'Magnitude spectrum of basebanded received signal')
-        plot(f/1000, abs(ftemp(rx.Ref,:)));
-        title('Magnitude spectrum of basebanded received signal', 'fontsize', szAxLabel2)
-        xlabel('Frequency, f [kHz]', 'fontsize', szAxLabel1)
-        ylabel('Magnitude, |P(f)|', 'fontsize', szAxLabel1)
-        h_fig=get(gcf,'CurrentAxes');
-        set(h_fig, 'fontsize', szAxScale);
-        axis 'square'; axis tight
+    Sfu = fftshift((fft(stu.')).', 2);
+
+    % Compensation for near-field effects
+    compFilter = zeros(rx.M, n);
+    for k = -rx.M/2:rx.M/2-1
+        td_comp = ((k*rx.d).^2/(2*RxToFocalRange.r))/c;
+        compFilter(k+rx.M/2+1, :) = exp(+1j*2*pi*(f)*td_comp);
     end;
-    
-%     G = real(stuphi(:,:,i));
-%     colormap(hot(256));
-%     imagesc(t, 1:rx.M, G);
-%     title('The received signal after basebanding', 'fontsize', szAxLabel2)
-%     xlabel('Time, t [sec]', 'fontsize', szAxLabel1)
-%     ylabel('Receive aperture, u [m]', 'fontsize', szAxLabel1)
-%     axis 'square'; axis 'xy'; colorbar
-%     h_fig=get(gcf,'CurrentAxes');
-%     set(h_fig, 'fontsize', szAxScale);
-%     pause(5);
+
+    Sfu = Sfu.*compFilter;
+
+    stu = (ifft(fftshift(Sfu,2).')).';
+
+    if (debug == 1)
+        G = real(stu);
+        figure('name', ['Near field compensation'])
+        colormap(hot(256));
+        imagesc(c*t/2, 1:rx.M, G);
+        title(['Near field compensation'], 'fontsize', szAxLabel2)
+        xlabel('Time, t [sec]', 'fontsize', szAxLabel1)
+        ylabel('Receiver element index', 'fontsize', szAxLabel1)
+        axis 'square'; axis 'xy'; colorbar
+        h_fig=get(gcf,'CurrentAxes');
+        set(h_fig, 'fontsize', szAxScale);
+    end;    
 end;
 
+%% FREQUENCY DOMAIN BEAMFORMING
+
+% Zero pad in the spatial domain
+
+stuphi = [ zeros(floor((rx.N - rx.M)/2),n); stu; zeros(ceil((rx.N - rx.M)/2),n) ];
+
+Sfu = fftshift((fft(stuphi.')).');
+Sfku = fftshift(fft(Sfu),1);
+Stku = ifft(fftshift(Sfku.',1)).';
+
+stuphi = Stku;
+
+if (debug == 1)
+    G = abs(stuphi);
+    figure('name',['After beamforming'])
+    colormap(hot(256));
+    % imagesc(G);
+    imagesc(c*t/2, 1:rx.N, G);
+    title(['Beam-time domain'], 'fontsize', szAxLabel2)
+    xlabel('Range, ct [m]', 'fontsize', szAxLabel1)
+    ylabel('Angle, \theta [deg]', 'fontsize', szAxLabel1)
+    axis 'square'; axis 'xy'; colorbar
+    h_fig=get(gcf,'CurrentAxes');
+    set(h_fig, 'fontsize', szAxScale);
+end;
 
 %% RANGE COMPRESSION
 
+stkuphi = zeros(rx.N, n, tx.N);
+
 td = t-Ts;
-for i = 1:tx.N    
+for i = 1:tx.N  
     beta = tx.Beam.f0(i);
     
     pha = 2*pi*(beta*td + tx.Beam.K*td.^2);
     pt = exp(1j*pha).*(td >= 0 & td <= Tp);
 
-    pt = pt.*(exp(-1j*2*pi*tx.Beam.fc(i)*td)); % Basebanding
+%     pt = pt.*(exp(-1j*2*pi*tx.Beam.fc(i)*td)); % Basebanding
     Pf = fftshift(fft(pt));
     
-    Sfkuphi = fftshift((fft(stuphi(:,:,i).')).',2);
-    temp = Sfkuphi.*(ones(rx.M, 1)*conj(Pf));
+    Sfkuphi = fftshift((fft(stuphi.')).',2);
+    temp = Sfkuphi.*(ones(rx.N, 1)*conj(Pf));
     
-    stuphi(:, :, i) = (ifft(fftshift(temp,2).')).';
+    stkuphi(:, :, i) = (ifft(fftshift(temp,2).')).';
     
     if (i < 4 && debug == 1)
-        G = abs(stuphi(:, :, i));
+        G = abs(stkuphi(:,:,i));
         figure('name',['Range compression image for beam ', num2str(tx.Beam.angle(i)*180/pi), ' deg'])
         colormap(hot(256));
         imagesc(c*t/2, 1:rx.N, G);
@@ -366,90 +373,88 @@ for i = 1:tx.N
     end;
 end;
 
-%% NEAR-FIELD COMPENSATION
+%% BASEBANDING
 
-RxToFocalRange.x = Rc - rx.Pos.x(rx.Ref);
-RxToFocalRange.y = -rx.Pos.y(rx.Ref);
-RxToFocalRange.z = -rx.Pos.z(rx.Ref);
-RxToFocalRange.r = sqrt(RxToFocalRange.x^2 + RxToFocalRange.y^2 + RxToFocalRange.z^2);
-
-if RxToFocalRange.r < rx.Beam.Fresnel && autoNFComp == 1    
-    for i = 1:tx.N
-        Sfu = fftshift((fft(stuphi(:, :, i).')).', 2);
-
-        % Compensation for near-field effects
-        compFilter = zeros(rx.M, n);
-        for k = -rx.M/2:rx.M/2-1
-            td_comp = ((k*rx.d).^2/(2*RxToFocalRange.r))/c;
-            compFilter(k+rx.M/2+1, :) = exp(+1j*2*pi*(f+tx.Beam.fc(i))*td_comp);
-        end;
-
-        Sfu = Sfu.*compFilter;
-
-        stuphi(:,:,i) = (ifft(fftshift(Sfu,2).')).';
-        
-        if (i < 4 && debug == 1)
-            G = real(stuphi(:,:,i));
-            figure('name', ['Near field compensation at ', num2str(tx.Beam.angle(i)*180/pi),' deg'])
-            colormap(hot(256));
-            imagesc(c*t/2, 1:rx.M, G);
-            title(['Near field compensation at ', num2str(tx.Beam.angle(i)*180/pi),' deg'], 'fontsize', szAxLabel2)
-            xlabel('Time, t [sec]', 'fontsize', szAxLabel1)
-            ylabel('Receiver element index', 'fontsize', szAxLabel1)
-            axis 'square'; axis 'xy'; colorbar
-            h_fig=get(gcf,'CurrentAxes');
-            set(h_fig, 'fontsize', szAxScale);
-        end;
-    end;
-end;
-
-%% FREQUENCY DOMAIN BEAMFORMING
-
-% Zero pad in the spatial domain
-
-stuphi = [ zeros(floor((rx.N - rx.M)/2),n,tx.N); stuphi; zeros(ceil((rx.N - rx.M)/2),n, tx.N) ];
-
-for i = 1:tx.N
-    Sfu = fftshift((fft(stuphi(:,:,i).')).');
-    Sfku = fftshift(fft(Sfu),1);
-    Stku = ifft(fftshift(Sfku.',1)).';
-    
-    stuphi(:,:,i) = Stku;
-    
-    if (i < 4 && debug == 1)
-        G = abs(Stku);
-        figure('name',['After beamforming at ', num2str(tx.Beam.angle(i)*180/pi),' deg'])
-        colormap(hot(256));
-        % imagesc(G);
-        imagesc(c*t/2, 1:rx.N, G);
-        title(['Beam-time domain at ', num2str(tx.Beam.angle(i)*180/pi),' deg'], 'fontsize', szAxLabel2)
-        xlabel('Range, ct [m]', 'fontsize', szAxLabel1)
-        ylabel('Angle, \theta [deg]', 'fontsize', szAxLabel1)
-        axis 'square'; axis 'xy'; colorbar
-        h_fig=get(gcf,'CurrentAxes');
-        set(h_fig, 'fontsize', szAxScale);
-    end;
-end;
-
+% for i = 1:tx.N
+%     %fprintf('Beam band: %.2f kHz - %.2f kHz\n', tx.Beam.f0(i)/1000.0, tx.Beam.f1(i)/1000);
+%     
+%     bbKernel = ones(rx.N, 1)*exp(-1j*2*pi*tx.Beam.fc(i)*t);
+%     temp = stkuphi(:,:,i).*bbKernel;
+%     
+%     ftemp = fftshift((fft(temp.')).',2).*(ones(rx.N,1)*(abs(f) <= tx.Beam.B/2));
+%     
+%     stkuphi(:, :, i) = (ifft(fftshift(ftemp,2).')).';
+%     
+%     if (i == (tx.N-1)/2+1 && debug == 1)     
+% %         figure('name', 'The received signal')
+% %         plot(t, real(stkuphi(rx.Ref,:,i)));
+% %         title(['Received signal at ', num2str(tx.Beam.angle(i)*180/pi), ' deg'], 'fontsize', szAxLabel2)
+% %         xlabel('Time, t [s]', 'fontsize', szAxLabel1)
+% %         ylabel('Amplitude (Real), p(t)', 'fontsize', szAxLabel1)
+% %         h_fig=get(gcf,'CurrentAxes');
+% %         set(h_fig, 'fontsize', szAxScale);
+% %         axis 'square'; axis tight;
+%         
+%         figure('name', 'The received signal after basebanding')
+%         plot(t, abs(stkuphi(rx.Ref,:,i)));
+%         title(['Received signal after basebanding at ', num2str(tx.Beam.angle(i)*180/pi), ' deg'], 'fontsize', szAxLabel2)
+%         xlabel('Time, t [s]', 'fontsize', szAxLabel1)
+%         ylabel('Amplitude (Real), p(t)', 'fontsize', szAxLabel1)
+%         h_fig=get(gcf,'CurrentAxes');
+%         set(h_fig, 'fontsize', szAxScale);
+%         axis 'square'; axis tight;
+%         
+%         figure('name', 'Magnitude spectrum of basebanded received signal')
+%         plot(f/1000, abs(ftemp(rx.Ref,:)));
+%         title('Magnitude spectrum of basebanded received signal', 'fontsize', szAxLabel2)
+%         xlabel('Frequency, f [kHz]', 'fontsize', szAxLabel1)
+%         ylabel('Magnitude, |P(f)|', 'fontsize', szAxLabel1)
+%         h_fig=get(gcf,'CurrentAxes');
+%         set(h_fig, 'fontsize', szAxScale);
+%         axis 'square'; axis tight
+%     end;
+%     
+% %     G = real(stuphi(:,:,i));
+% %     colormap(hot(256));
+% %     imagesc(t, 1:rx.M, G);
+% %     title('The received signal after basebanding', 'fontsize', szAxLabel2)
+% %     xlabel('Time, t [sec]', 'fontsize', szAxLabel1)
+% %     ylabel('Receive aperture, u [m]', 'fontsize', szAxLabel1)
+% %     axis 'square'; axis 'xy'; colorbar
+% %     h_fig=get(gcf,'CurrentAxes');
+% %     set(h_fig, 'fontsize', szAxScale);
+% %     pause(5);
+% end;
 
 %% TEMPORAL DECIMATION
 
-decimate.Ratio = 2*floor(fs/(2*(5*tx.Beam.B)));
+decimate.Ratio = 1;
 decimate.Fs = fs/decimate.Ratio;
 decimate.n = 2*floor(n/(2*decimate.Ratio));
 decimate.dt = 1/decimate.Fs;
 
-stuphiDecimated = zeros(size(stuphi,1), decimate.n, size(stuphi,3));
+if(decimate.Ratio > 1)
+    
+    stuphiDecimated = zeros(size(stuphi,1), decimate.n, size(stuphi,3));
 
-v = floor( linspace(1, n, decimate.n) );
+    v = floor( linspace(1, n, decimate.n) );
 
-for i = 1:tx.N
-    for j = 1:rx.N
-        for k = 1:decimate.n
-            stuphiDecimated(j, k, i) = stuphi( j, v(k), i );
+    for i = 1:tx.N
+        for j = 1:rx.N
+            for k = 1:decimate.n
+                stuphiDecimated(j, k, i) = stkuphi( j, v(k), i );
+            end;
         end;
     end;
+
+else
+    
+    stuphiDecimated = stkuphi;
+    
 end;
+
+
+%% RESAMPLE TO TARGET REGION
 
 nR = 2*ceil(((X1 - X0)/c)/(2*decimate.dt));
 
@@ -458,7 +463,7 @@ stuphiTargetRegion = zeros(size(G,1), nR, size(G,3));
 for i = 1:tx.N
     for j = 1:rx.N
         for k = 1:nR
-            stuphiTargetRegion(j,k,i) = stuphiDecimated(j,k,i);
+            stuphiTargetRegion(j, k, i) = stuphiDecimated(j, k, i);
         end;
     end;
 end;
