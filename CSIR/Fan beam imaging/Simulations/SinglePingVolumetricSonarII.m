@@ -482,7 +482,7 @@ if(tx.N > 1)
     h_fig=get(gcf,'CurrentAxes');
     set(h_fig, 'fontsize', szAxScale); 
     alphamap('rampup');
-    %alphamap(0.5.*alphamap);
+    alphamap(0.07.*alphamap);
 else
     G = abs(stuphiTargetRegion);
     figure('name', 'Image')
