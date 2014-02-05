@@ -1,0 +1,702 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>TRANSDUCER BEAMWIDTH CALIBRATION</title><meta name="generator" content="MATLAB 8.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2013-04-11"><meta name="DC.source" content="Transducer_Beamwidth_Calibration.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, tt, code { font-size:12px; }
+pre { margin:0px 0px 20px; }
+pre.error { color:red; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>TRANSDUCER BEAMWIDTH CALIBRATION</h1><!--introduction--><p>The script simulates the acquisition and processing of ultrasonic signals to calibrate the beamwidth of a transducer. The simulation incorporates the radiation pattern of different apertures as given in [1]. [1]. Steinberg, Bernard D, (1976); 'Principles of aperture and array system design'. John Wiley &amp; Sons</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">OPTIONS</a></li><li><a href="#2">ACQUISITION PARAMETERS</a></li><li><a href="#3">GEOMETRY PARAMETERS</a></li><li><a href="#4">DATA VECTORS</a></li><li><a href="#5">THE TRANSMITTED SIGNAL</a></li><li><a href="#6">ACQUISITION SIMULATION</a></li><li><a href="#7">BEAMWIDTH CALIBRATION BY MATCHED FILTERING</a></li><li><a href="#8">DIG OUT THE PEAKS OF THE PROCESSED DATA</a></li></ul></div><h2>OPTIONS<a name="1"></a></h2><pre class="codeinput">clear <span class="string">all</span>
+close <span class="string">all</span>
+clc
+
+chirp_pulse = 1; <span class="comment">% 1 to simulate using a chirp pulse; 0 to simulate using a monochrome pulse</span>
+simulate_WGN = 0; <span class="comment">% 1 to simulate with white noise; 0 to simulate without white noise</span>
+<span class="keyword">if</span> simulate_WGN == 1
+    SNR = 3; <span class="comment">% Signal to noise  ratio in dB</span>
+<span class="keyword">end</span>;
+aperture = 1; <span class="comment">% 1 for rectangular aperture, 2 for triangular aperture</span>
+
+<span class="comment">% Figure print parameters</span>
+szAxScale = 20;
+szAxLabel = 20;
+figRes = <span class="string">'-r300'</span>;
+
+<span class="comment">% Output path</span>
+<span class="keyword">if</span> chirp_pulse == 1
+    <span class="keyword">if</span> simulate_WGN == 0
+        outpath = <span class="string">'./images/chirp pulse/without noise'</span>;
+    <span class="keyword">else</span>
+        outpath = <span class="string">'./images/chirp pulse/with noise'</span>;
+    <span class="keyword">end</span>;
+<span class="keyword">else</span>
+    <span class="keyword">if</span> simulate_WGN == 0
+        outpath = <span class="string">'./images/monochrome pulse/without noise'</span>;
+    <span class="keyword">else</span>
+        outpath = <span class="string">'./images/monochrome pulse/with noise'</span>;
+    <span class="keyword">end</span>;
+<span class="keyword">end</span>;
+</pre><h2>ACQUISITION PARAMETERS<a name="2"></a></h2><pre class="codeinput">c = 1500; <span class="comment">% Speed of ultrasonic propagation</span>
+fc = 400e3; <span class="comment">% Centre frequency</span>
+B = 5e3; <span class="comment">% Signal bandwidth</span>
+B0 = B/2; <span class="comment">% Baseband bandwidth</span>
+lambda_c = c/fc; <span class="comment">% Wavelength at centre frequency</span>
+lambda_min = c/(fc+B0);
+lambda_max = c/(fc-B0);
+Tp = 5e-3; <span class="comment">% Pulse width</span>
+K = B0/Tp; <span class="comment">% Chirp rate</span>
+beta = fc - B0; <span class="comment">% Modified chirp carrier</span>
+
+<span class="keyword">if</span> chirp_pulse
+    <span class="comment">%fs = 10*B;</span>
+    fs = 4*(fc+B0);
+<span class="keyword">else</span>
+    fs = 5*fc;
+<span class="keyword">end</span>;
+</pre><h2>GEOMETRY PARAMETERS<a name="3"></a></h2><pre class="codeinput">R = 3; <span class="comment">% Distance between transmitter and receivers</span>
+D = 0.10; <span class="comment">% Dimension of the transducer along the azimuth</span>
+dtheta = 0.1; <span class="comment">% Angular acquisition interval in degrees</span>
+theta_start = 0;
+theta_end = 360;
+theta_s = theta_end - theta_start; <span class="comment">% Angular acquisition length in degrees</span>
+<span class="keyword">switch</span> aperture
+    <span class="keyword">case</span> 1
+        phi_d = (180/pi)*asin(0.88*lambda_c/D); <span class="comment">% Divergence angle (beamwidth) in degrees for a rectangular aperture</span>
+    <span class="keyword">case</span> 2
+        phi_d = (180/pi)*asin(1.27*lambda_c/D); <span class="comment">% Divergence angle (beamwidth) in degrees for a triangular aperture</span>
+    <span class="keyword">otherwise</span>
+        error(<span class="string">'Unexpected aperture type!'</span>);
+<span class="keyword">end</span>;
+</pre><h2>DATA VECTORS<a name="4"></a></h2><pre class="codeinput">m = ceil(theta_s/dtheta); <span class="comment">% Number of acquisitions</span>
+u = theta_start + dtheta*(0:m-1); <span class="comment">% Azimuth vector</span>
+
+dt = 1/fs;
+Ts = 0; <span class="comment">% Sampling start time</span>
+Te = (R/c + Tp*1.5); <span class="comment">% Sampling end time</span>
+n = 2*ceil((Te - Ts)/(2*dt));
+
+t = Ts+ dt*(0:n-1); <span class="comment">% Time vector</span>
+
+df = 1/(n*dt);
+f = df*(0:n-1); <span class="comment">% Frequency vector</span>
+</pre><h2>THE TRANSMITTED SIGNAL<a name="5"></a></h2><p>The transmitted pulse</p><pre class="codeinput">td = t-Ts;
+<span class="keyword">if</span> chirp_pulse
+    pha = 2*pi*(beta*td + K*td.^2);
+<span class="keyword">else</span>
+    pha = 2*pi*fc*td;
+<span class="keyword">end</span>;
+pt = exp(1j*pha).*(td&gt;=0 &amp; td &lt;= Tp);
+
+figure(<span class="string">'name'</span>,<span class="string">'The transmitted pulse in the time domain'</span>)
+plot(td,real(pt))
+title(<span class="string">'Transmitted pulse'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+xlabel(<span class="string">'Time, t [s]'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+ylabel(<span class="string">'Amplitude (Real), p(t)'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+axis <span class="string">'square'</span>
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Transmitted pulse in the time domain'</span>])
+
+figure(<span class="string">'name'</span>,<span class="string">'The magnitude spectrum of transmitted pulse'</span>)
+plot(f, abs((fft(pt))))
+title(<span class="string">'Magnitude spectrum of transmitted pulse'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+xlabel(<span class="string">'Frequency, f [Hz]'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+ylabel(<span class="string">'Magnitude, |P(f)|'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+axis <span class="string">'square'</span>; axis <span class="string">tight</span>
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Magnitude spectrum of the transmitted pulse'</span>])
+
+pt = pt.*exp(-1j*2*pi*fc*t);
+
+figure(<span class="string">'name'</span>,<span class="string">'The baseband transmitted pulse in the time domain'</span>)
+plot(td,real(pt))
+title(<span class="string">'Basebanded transmitted pulse'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+xlabel(<span class="string">'Time, t [s]'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+ylabel(<span class="string">'Amplitude (Real), p(t)'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+axis <span class="string">'square'</span>
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Basebanded transmitted pulse in the time domain'</span>])
+
+figure(<span class="string">'name'</span>,<span class="string">'The magnitude spectrum of transmitted pulse'</span>)
+plot(df*(-n/2:n/2-1), abs(fftshift((fft(pt)))))
+title(<span class="string">'Magnitude spectrum of basebanded transmitted pulse'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+xlabel(<span class="string">'Frequency, f [Hz]'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+ylabel(<span class="string">'Magnitude, |P(f)|'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+axis <span class="string">'square'</span>; axis <span class="string">tight</span>
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Magnitude spectrum of basebanded transmitted pulse'</span>])
+</pre><img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_01.png" alt=""> <img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_02.png" alt=""> <img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_03.png" alt=""> <img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_04.png" alt=""> <h2>ACQUISITION SIMULATION<a name="6"></a></h2><pre class="codeinput">td = ones(m,1)*(t - R/c); <span class="comment">% Propagation delay of the pulse</span>
+
+<span class="keyword">if</span> chirp_pulse
+    pha = 2*pi*(beta*td + K*td.^2);
+<span class="keyword">else</span>
+    pha = 2*pi*fc*td;
+<span class="keyword">end</span>;
+
+stu = exp(1j*pha).*(td &gt;= 0 &amp; td &lt;= Tp);
+
+stu = stu.*exp(-1j*2*pi*fc*(ones(m,1)*t)); <span class="comment">% Baseband conversion</span>
+
+<span class="comment">% Incorporate beampattern</span>
+<span class="keyword">switch</span> aperture
+    <span class="keyword">case</span> 1
+        beam_arg = ((D*((u-90)*pi/180))/lambda_c);
+        beam_pattern = sinc(beam_arg); <span class="comment">% Radiation pattern for a rectangular aperture</span>
+    <span class="keyword">case</span> 2
+        beam_arg = ((D*((u-90)*pi/180))/(2*lambda_c));
+        beam_pattern = (sinc(beam_arg)).^2; <span class="comment">% Radiation pattern for a triangular aperture</span>
+<span class="keyword">end</span>;
+
+figure(<span class="string">'name'</span>,<span class="string">'Theoretical radiation pattern'</span>)
+polar(u*pi/180, abs(beam_pattern))
+title([<span class="string">'Theoretical radiation pattern. Beamwidth = '</span>,num2str(phi_d),<span class="string">' [deg]'</span>], <span class="string">'fontsize'</span>, szAxLabel)
+<span class="comment">% xlabel('Angle, \theta [deg]', 'fontsize', szAxLabel)</span>
+<span class="comment">% ylabel('Level', 'fontsize', szAxLabel)</span>
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+axis <span class="string">'square'</span>; <span class="comment">%axis tight</span>
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Theoretical radiation pattern'</span>])
+
+stu = stu.*(beam_pattern.'*ones(1,n));
+
+<span class="keyword">if</span> simulate_WGN == 1
+    amplitude_noise = randn(m,n)*10^(-SNR/20);
+    phase_noise = randn(m,n)*10^(-SNR/20);
+    stu = stu + (amplitude_noise);<span class="comment">%.*exp(1j*2*pi*phase_noise));</span>
+<span class="keyword">end</span>;
+
+<span class="comment">% G = real(stu);</span>
+<span class="comment">% figure('name','Acquired ultrasound data')</span>
+<span class="comment">% colormap(hot)</span>
+<span class="comment">% imagesc(t,u,G);</span>
+<span class="comment">% axis 'square'; axis 'xy'; colorbar;</span>
+<span class="comment">% xlabel('Time, t [s]', 'fontsize', szAxLabel)</span>
+<span class="comment">% ylabel('Angle, \theta [deg]', 'fontsize', szAxLabel)</span>
+<span class="comment">% h_fig=get(gcf,'CurrentAxes');</span>
+<span class="comment">% set(h_fig, 'fontsize', szAxScale);</span>
+
+theta_slice = 90;
+theta_bin = ceil((theta_slice - theta_start)/dtheta);
+
+figure(<span class="string">'name'</span>,<span class="string">'Received signal at boresight'</span>);
+<span class="comment">% subplot(121)</span>
+plot(t, real(stu(theta_bin,:)))
+title(<span class="string">'Real part of the received signal at boresight'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+xlabel(<span class="string">'Time, t [s]'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+ylabel(<span class="string">'Amplitude (Real), s(t)'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+axis <span class="string">'square'</span>; axis <span class="string">tight</span>
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Received signal at boresight'</span>])
+
+<span class="comment">% subplot(122)</span>
+<span class="comment">% plot(t, angle(stu(theta_bin,:))/(2*pi))</span>
+<span class="comment">% title('Phase of the received signal at 90 degrees', 'fontsize', szAxLabel)</span>
+<span class="comment">% xlabel('Time, t [s]', 'fontsize', szAxLabel)</span>
+<span class="comment">% ylabel('Phase, *2\pi [rads]', 'fontsize', szAxLabel)</span>
+<span class="comment">% h_fig=get(gcf,'CurrentAxes');</span>
+<span class="comment">% set(h_fig, 'fontsize', szAxScale);</span>
+<span class="comment">% axis 'square'; axis tight</span>
+</pre><img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_05.png" alt=""> <img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_06.png" alt=""> <h2>BEAMWIDTH CALIBRATION BY MATCHED FILTERING<a name="7"></a></h2><pre class="codeinput">f = df*(-n/2:n/2-1);
+<span class="comment">% The reference signal: a shifted version of the transmitted pulse</span>
+<span class="comment">% td0 = t - R/c;</span>
+<span class="comment">% if chirp_pulse</span>
+<span class="comment">%     pha0 = 2*pi*(beta*td0 + K*(td0.^2));</span>
+<span class="comment">% else</span>
+<span class="comment">%     pha0 = 2*pi*fc*td0;</span>
+<span class="comment">% end;</span>
+<span class="comment">% s0 = exp(1j*pha0).*(td0&gt;=0 &amp; td0&lt;=Tp);</span>
+<span class="comment">% s0b = s0.*exp(-1j*2*pi*fc*t);    % baseband reference signal</span>
+<span class="comment">% fs0b = fty(s0b);  % FFT of reference signal</span>
+
+<span class="comment">% Alternatively the existing transmitted signal vector can be time-shifted</span>
+<span class="comment">% by multiplying by a phase in the frequency domain</span>
+s0b = pt;
+fs0b = fty(s0b).*exp(-1j*2*pi*f*R/c);
+
+fsb = fty(stu);    <span class="comment">% FFT of baseband echoed signal</span>
+fsmb = fsb.*(ones(m,1)*conj(fs0b)); <span class="comment">% Matched filtering and windowing</span>
+fsmb = fsmb.*(ones(m,1)*(abs(f) &lt;= B0));
+smb = ifty(fsmb);
+
+tm=(R/c)+dt*(-n/2:n/2-1);   <span class="comment">% fast-time array after matched filtering</span>
+
+G=abs(smb);
+xg=max(max(G)); ng=min(min(G)); cg=255/(xg-ng);
+
+figure(<span class="string">'name'</span>, <span class="string">'SAS signal after range compression'</span>)
+colormap(hot(256))
+imagesc(c*tm, u, G);
+title(<span class="string">'Matched filtered signal variation with angle'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+xlabel(<span class="string">'Range, ct [m]'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+ylabel(<span class="string">'Angle, \theta [deg]'</span>,<span class="string">'fontsize'</span>, szAxLabel)
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+axis(<span class="string">'square'</span>); axis(<span class="string">'xy'</span>); colorbar
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Matched filtered signal variation with angle'</span>])
+
+figure(<span class="string">'name'</span>,<span class="string">'Received signal at boresight after matched filtering'</span>);
+<span class="comment">% subplot(121)</span>
+plot(c*tm, G(theta_bin,:))
+title(<span class="string">'Magnitude of match filtered signal at boresight'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+xlabel(<span class="string">'Range, ct [m]'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+ylabel(<span class="string">'Amplitude, s_m(t)'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+axis <span class="string">'square'</span>; axis <span class="string">tight</span>
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Output of matched filter at boresight'</span>])
+
+<span class="comment">% subplot(122)</span>
+<span class="comment">% plot(c*tm, angle(smb(theta_bin,:))/(2*pi))</span>
+<span class="comment">% title('Phase of match filtered signal at 90 degrees', 'fontsize', szAxLabel)</span>
+<span class="comment">% xlabel('Range, ct [m]', 'fontsize', szAxLabel)</span>
+<span class="comment">% ylabel('Phase, *2\pi [rads]', 'fontsize', szAxLabel)</span>
+<span class="comment">% h_fig=get(gcf,'CurrentAxes');</span>
+<span class="comment">% set(h_fig, 'fontsize', szAxScale);</span>
+<span class="comment">% axis 'square'; axis tight</span>
+</pre><img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_07.png" alt=""> <img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_08.png" alt=""> <h2>DIG OUT THE PEAKS OF THE PROCESSED DATA<a name="8"></a></h2><pre class="codeinput">act_Beam = zeros(1,m);
+<span class="keyword">for</span> i = 1:m
+    temp = abs(smb(i,:));
+    temp1 = (temp == max(temp));
+    idx = find(temp1,1,<span class="string">'first'</span>);
+    act_Beam(i) = abs(smb(i,idx));
+<span class="keyword">end</span>;
+
+act_Beam_normalised = act_Beam./max(act_Beam);
+threedB_level = 0.7; <span class="comment">% -3dB level is the 0.7V or 0.5W</span>
+threedB_points = [u(find(act_Beam_normalised &gt;= threedB_level,1,<span class="string">'first'</span>)),<span class="keyword">...</span>
+    u(find(act_Beam_normalised &gt;= threedB_level,1,<span class="string">'last'</span>))];
+actual_phi_d = threedB_points(2) - threedB_points(1);
+
+fprintf(<span class="string">'Theoretical transducer beamwidth = %.2f degrees\n'</span>,phi_d);
+fprintf(<span class="string">'Measured transducer beamwidth = %.2f degrees\n'</span>,actual_phi_d);
+
+figure(<span class="string">'name'</span>,<span class="string">'Measured radiation pattern (extracted from processed data)'</span>)
+<span class="comment">% subplot(2,2,2)</span>
+plot(u, act_Beam_normalised)
+title(<span class="string">'Measured radiation pattern on linear scale'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+xlabel(<span class="string">'Angle, \theta [deg]'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+ylabel(<span class="string">'Normalized level'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+axis <span class="string">'square'</span>; axis <span class="string">'tight'</span>
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Measured radiation pattern'</span>])
+
+figure(<span class="string">'name'</span>,<span class="string">'Measured radiation pattern - dB scale'</span>)
+<span class="comment">% subplot(2,2,4)</span>
+plot(u, 20*log10(act_Beam_normalised))
+title(<span class="string">'Measured radiation pattern on dB scale'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+xlabel(<span class="string">'Angle, \theta [deg]'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+ylabel(<span class="string">'Normalized level, [dB]'</span>, <span class="string">'fontsize'</span>, szAxLabel)
+axis <span class="string">'square'</span>; axis <span class="string">'tight'</span>
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Measured radiation pattern (dB)'</span>])
+
+figure(<span class="string">'name'</span>,<span class="string">'Measured radiation pattern - Polar plot'</span>)
+<span class="comment">% subplot(2,2,[1 3])</span>
+polar(u*pi/180, act_Beam_normalised)
+title([<span class="string">'Measured radiation pattern. Beamwidth = '</span>,num2str(actual_phi_d),<span class="string">' [deg]'</span>], <span class="string">'fontsize'</span>, szAxLabel)
+axis <span class="string">'square'</span>; <span class="comment">%axis tight</span>
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+print(<span class="string">'-dpng'</span>, figRes, [outpath <span class="string">'/Measured radiation pattern (Polar)'</span>])
+</pre><pre class="codeoutput">Theoretical transducer beamwidth = 1.89 degrees
+Measured transducer beamwidth = 1.80 degrees
+</pre><img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_09.png" alt=""> <img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_10.png" alt=""> <img vspace="5" hspace="5" src="Transducer_Beamwidth_Calibration_11.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2013a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% TRANSDUCER BEAMWIDTH CALIBRATION
+% The script simulates the acquisition and processing of ultrasonic signals
+% to calibrate the beamwidth of a transducer. The simulation incorporates
+% the radiation pattern of different apertures as given in [1].
+% [1]. Steinberg, Bernard D, (1976); 'Principles of aperture and array
+% system design'. John Wiley & Sons
+
+%% OPTIONS
+clear all
+close all
+clc
+
+chirp_pulse = 1; % 1 to simulate using a chirp pulse; 0 to simulate using a monochrome pulse
+simulate_WGN = 0; % 1 to simulate with white noise; 0 to simulate without white noise
+if simulate_WGN == 1 
+    SNR = 3; % Signal to noise  ratio in dB
+end;
+aperture = 1; % 1 for rectangular aperture, 2 for triangular aperture
+
+% Figure print parameters
+szAxScale = 20;
+szAxLabel = 20;
+figRes = '-r300';
+
+% Output path
+if chirp_pulse == 1
+    if simulate_WGN == 0
+        outpath = './images/chirp pulse/without noise';
+    else
+        outpath = './images/chirp pulse/with noise';
+    end;
+else
+    if simulate_WGN == 0
+        outpath = './images/monochrome pulse/without noise';
+    else
+        outpath = './images/monochrome pulse/with noise';
+    end;
+end;
+%% ACQUISITION PARAMETERS
+
+c = 1500; % Speed of ultrasonic propagation
+fc = 400e3; % Centre frequency
+B = 5e3; % Signal bandwidth
+B0 = B/2; % Baseband bandwidth
+lambda_c = c/fc; % Wavelength at centre frequency
+lambda_min = c/(fc+B0);
+lambda_max = c/(fc-B0);
+Tp = 5e-3; % Pulse width
+K = B0/Tp; % Chirp rate
+beta = fc - B0; % Modified chirp carrier
+
+if chirp_pulse
+    %fs = 10*B;
+    fs = 4*(fc+B0);
+else
+    fs = 5*fc;
+end;
+
+%% GEOMETRY PARAMETERS
+
+R = 3; % Distance between transmitter and receivers
+D = 0.10; % Dimension of the transducer along the azimuth
+dtheta = 0.1; % Angular acquisition interval in degrees
+theta_start = 0;
+theta_end = 360;
+theta_s = theta_end - theta_start; % Angular acquisition length in degrees
+switch aperture
+    case 1
+        phi_d = (180/pi)*asin(0.88*lambda_c/D); % Divergence angle (beamwidth) in degrees for a rectangular aperture
+    case 2
+        phi_d = (180/pi)*asin(1.27*lambda_c/D); % Divergence angle (beamwidth) in degrees for a triangular aperture
+    otherwise
+        error('Unexpected aperture type!');
+end;
+
+%% DATA VECTORS
+
+m = ceil(theta_s/dtheta); % Number of acquisitions
+u = theta_start + dtheta*(0:m-1); % Azimuth vector
+
+dt = 1/fs;
+Ts = 0; % Sampling start time
+Te = (R/c + Tp*1.5); % Sampling end time
+n = 2*ceil((Te - Ts)/(2*dt));
+
+t = Ts+ dt*(0:n-1); % Time vector
+
+df = 1/(n*dt);
+f = df*(0:n-1); % Frequency vector
+
+%% THE TRANSMITTED SIGNAL
+% The transmitted pulse
+
+td = t-Ts;
+if chirp_pulse
+    pha = 2*pi*(beta*td + K*td.^2);
+else
+    pha = 2*pi*fc*td;
+end;
+pt = exp(1j*pha).*(td>=0 & td <= Tp);
+
+figure('name','The transmitted pulse in the time domain')
+plot(td,real(pt))
+title('Transmitted pulse', 'fontsize', szAxLabel)
+xlabel('Time, t [s]', 'fontsize', szAxLabel)
+ylabel('Amplitude (Real), p(t)', 'fontsize', szAxLabel)
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+axis 'square'
+print('-dpng', figRes, [outpath '/Transmitted pulse in the time domain'])
+
+figure('name','The magnitude spectrum of transmitted pulse')
+plot(f, abs((fft(pt))))
+title('Magnitude spectrum of transmitted pulse', 'fontsize', szAxLabel)
+xlabel('Frequency, f [Hz]', 'fontsize', szAxLabel)
+ylabel('Magnitude, |P(f)|', 'fontsize', szAxLabel)
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+axis 'square'; axis tight
+print('-dpng', figRes, [outpath '/Magnitude spectrum of the transmitted pulse'])
+
+pt = pt.*exp(-1j*2*pi*fc*t);
+
+figure('name','The baseband transmitted pulse in the time domain')
+plot(td,real(pt))
+title('Basebanded transmitted pulse', 'fontsize', szAxLabel)
+xlabel('Time, t [s]', 'fontsize', szAxLabel)
+ylabel('Amplitude (Real), p(t)', 'fontsize', szAxLabel)
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+axis 'square'
+print('-dpng', figRes, [outpath '/Basebanded transmitted pulse in the time domain'])
+
+figure('name','The magnitude spectrum of transmitted pulse')
+plot(df*(-n/2:n/2-1), abs(fftshift((fft(pt)))))
+title('Magnitude spectrum of basebanded transmitted pulse', 'fontsize', szAxLabel)
+xlabel('Frequency, f [Hz]', 'fontsize', szAxLabel)
+ylabel('Magnitude, |P(f)|', 'fontsize', szAxLabel)
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+axis 'square'; axis tight
+print('-dpng', figRes, [outpath '/Magnitude spectrum of basebanded transmitted pulse'])
+
+
+%% ACQUISITION SIMULATION
+
+td = ones(m,1)*(t - R/c); % Propagation delay of the pulse
+
+if chirp_pulse
+    pha = 2*pi*(beta*td + K*td.^2);
+else
+    pha = 2*pi*fc*td;
+end;
+
+stu = exp(1j*pha).*(td >= 0 & td <= Tp);
+
+stu = stu.*exp(-1j*2*pi*fc*(ones(m,1)*t)); % Baseband conversion
+
+% Incorporate beampattern
+switch aperture
+    case 1
+        beam_arg = ((D*((u-90)*pi/180))/lambda_c);
+        beam_pattern = sinc(beam_arg); % Radiation pattern for a rectangular aperture
+    case 2
+        beam_arg = ((D*((u-90)*pi/180))/(2*lambda_c));
+        beam_pattern = (sinc(beam_arg)).^2; % Radiation pattern for a triangular aperture
+end;
+
+figure('name','Theoretical radiation pattern')
+polar(u*pi/180, abs(beam_pattern))
+title(['Theoretical radiation pattern. Beamwidth = ',num2str(phi_d),' [deg]'], 'fontsize', szAxLabel)
+% xlabel('Angle, \theta [deg]', 'fontsize', szAxLabel)
+% ylabel('Level', 'fontsize', szAxLabel)
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+axis 'square'; %axis tight
+print('-dpng', figRes, [outpath '/Theoretical radiation pattern'])
+
+stu = stu.*(beam_pattern.'*ones(1,n));
+
+if simulate_WGN == 1
+    amplitude_noise = randn(m,n)*10^(-SNR/20);
+    phase_noise = randn(m,n)*10^(-SNR/20);
+    stu = stu + (amplitude_noise);%.*exp(1j*2*pi*phase_noise));
+end;
+
+% G = real(stu);
+% figure('name','Acquired ultrasound data')
+% colormap(hot)
+% imagesc(t,u,G);
+% axis 'square'; axis 'xy'; colorbar;
+% xlabel('Time, t [s]', 'fontsize', szAxLabel)
+% ylabel('Angle, \theta [deg]', 'fontsize', szAxLabel)
+% h_fig=get(gcf,'CurrentAxes');
+% set(h_fig, 'fontsize', szAxScale);
+
+theta_slice = 90;
+theta_bin = ceil((theta_slice - theta_start)/dtheta);
+
+figure('name','Received signal at boresight');
+% subplot(121)
+plot(t, real(stu(theta_bin,:)))
+title('Real part of the received signal at boresight', 'fontsize', szAxLabel)
+xlabel('Time, t [s]', 'fontsize', szAxLabel)
+ylabel('Amplitude (Real), s(t)', 'fontsize', szAxLabel)
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+axis 'square'; axis tight
+print('-dpng', figRes, [outpath '/Received signal at boresight'])
+
+% subplot(122)
+% plot(t, angle(stu(theta_bin,:))/(2*pi))
+% title('Phase of the received signal at 90 degrees', 'fontsize', szAxLabel)
+% xlabel('Time, t [s]', 'fontsize', szAxLabel)
+% ylabel('Phase, *2\pi [rads]', 'fontsize', szAxLabel)
+% h_fig=get(gcf,'CurrentAxes');
+% set(h_fig, 'fontsize', szAxScale);
+% axis 'square'; axis tight
+
+%% BEAMWIDTH CALIBRATION BY MATCHED FILTERING
+
+f = df*(-n/2:n/2-1);
+% The reference signal: a shifted version of the transmitted pulse
+% td0 = t - R/c;
+% if chirp_pulse
+%     pha0 = 2*pi*(beta*td0 + K*(td0.^2));
+% else
+%     pha0 = 2*pi*fc*td0;
+% end;
+% s0 = exp(1j*pha0).*(td0>=0 & td0<=Tp);
+% s0b = s0.*exp(-1j*2*pi*fc*t);    % baseband reference signal
+% fs0b = fty(s0b);  % FFT of reference signal
+
+% Alternatively the existing transmitted signal vector can be time-shifted
+% by multiplying by a phase in the frequency domain
+s0b = pt;
+fs0b = fty(s0b).*exp(-1j*2*pi*f*R/c);
+
+fsb = fty(stu);    % FFT of baseband echoed signal 
+fsmb = fsb.*(ones(m,1)*conj(fs0b)); % Matched filtering and windowing
+fsmb = fsmb.*(ones(m,1)*(abs(f) <= B0));
+smb = ifty(fsmb);
+
+tm=(R/c)+dt*(-n/2:n/2-1);   % fast-time array after matched filtering
+
+G=abs(smb);
+xg=max(max(G)); ng=min(min(G)); cg=255/(xg-ng);
+
+figure('name', 'SAS signal after range compression')
+colormap(hot(256))
+imagesc(c*tm, u, G);
+title('Matched filtered signal variation with angle', 'fontsize', szAxLabel)
+xlabel('Range, ct [m]', 'fontsize', szAxLabel)
+ylabel('Angle, \theta [deg]','fontsize', szAxLabel)
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+axis('square'); axis('xy'); colorbar
+print('-dpng', figRes, [outpath '/Matched filtered signal variation with angle'])
+
+figure('name','Received signal at boresight after matched filtering');
+% subplot(121)
+plot(c*tm, G(theta_bin,:))
+title('Magnitude of match filtered signal at boresight', 'fontsize', szAxLabel)
+xlabel('Range, ct [m]', 'fontsize', szAxLabel)
+ylabel('Amplitude, s_m(t)', 'fontsize', szAxLabel)
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+axis 'square'; axis tight
+print('-dpng', figRes, [outpath '/Output of matched filter at boresight'])
+
+% subplot(122)
+% plot(c*tm, angle(smb(theta_bin,:))/(2*pi))
+% title('Phase of match filtered signal at 90 degrees', 'fontsize', szAxLabel)
+% xlabel('Range, ct [m]', 'fontsize', szAxLabel)
+% ylabel('Phase, *2\pi [rads]', 'fontsize', szAxLabel)
+% h_fig=get(gcf,'CurrentAxes');
+% set(h_fig, 'fontsize', szAxScale);
+% axis 'square'; axis tight
+
+%% DIG OUT THE PEAKS OF THE PROCESSED DATA
+
+act_Beam = zeros(1,m);
+for i = 1:m
+    temp = abs(smb(i,:));
+    temp1 = (temp == max(temp));
+    idx = find(temp1,1,'first');
+    act_Beam(i) = abs(smb(i,idx));
+end;
+
+act_Beam_normalised = act_Beam./max(act_Beam);
+threedB_level = 0.7; % -3dB level is the 0.7V or 0.5W
+threedB_points = [u(find(act_Beam_normalised >= threedB_level,1,'first')),...
+    u(find(act_Beam_normalised >= threedB_level,1,'last'))];
+actual_phi_d = threedB_points(2) - threedB_points(1);
+
+fprintf('Theoretical transducer beamwidth = %.2f degrees\n',phi_d);
+fprintf('Measured transducer beamwidth = %.2f degrees\n',actual_phi_d);
+
+figure('name','Measured radiation pattern (extracted from processed data)')
+% subplot(2,2,2)
+plot(u, act_Beam_normalised)
+title('Measured radiation pattern on linear scale', 'fontsize', szAxLabel)
+xlabel('Angle, \theta [deg]', 'fontsize', szAxLabel)
+ylabel('Normalized level', 'fontsize', szAxLabel)
+axis 'square'; axis 'tight'
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+print('-dpng', figRes, [outpath '/Measured radiation pattern'])
+
+figure('name','Measured radiation pattern - dB scale')
+% subplot(2,2,4)
+plot(u, 20*log10(act_Beam_normalised))
+title('Measured radiation pattern on dB scale', 'fontsize', szAxLabel)
+xlabel('Angle, \theta [deg]', 'fontsize', szAxLabel)
+ylabel('Normalized level, [dB]', 'fontsize', szAxLabel)
+axis 'square'; axis 'tight'
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+print('-dpng', figRes, [outpath '/Measured radiation pattern (dB)'])
+
+figure('name','Measured radiation pattern - Polar plot')
+% subplot(2,2,[1 3])
+polar(u*pi/180, act_Beam_normalised)
+title(['Measured radiation pattern. Beamwidth = ',num2str(actual_phi_d),' [deg]'], 'fontsize', szAxLabel)
+axis 'square'; %axis tight
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+print('-dpng', figRes, [outpath '/Measured radiation pattern (Polar)'])
+
+
+
+##### SOURCE END #####
+--></body></html>

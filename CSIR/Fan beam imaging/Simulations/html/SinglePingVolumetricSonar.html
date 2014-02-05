@@ -1,0 +1,1006 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>3D VOLUMETRIC SONAR IMAGING USING THE SINGLE PING METHODOLOGY</title><meta name="generator" content="MATLAB 8.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2014-02-05"><meta name="DC.source" content="SinglePingVolumetricSonar.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, tt, code { font-size:12px; }
+pre { margin:0px 0px 20px; }
+pre.error { color:red; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>3D VOLUMETRIC SONAR IMAGING USING THE SINGLE PING METHODOLOGY</h1><!--introduction--><p>Each elevation beam is allocated a given frequency.  The transmitted waveform is generated such that all the beams are encoded in one pulse. The 3D sonar volume is built by processing the returns from each beam using conventional 2D beamforming techniques.  Particularly, received data are basebanded prior to any focusing.  Also, pulse compression is preceeds beamforming.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">GENERAL OPTIONS</a></li><li><a href="#2">GENERAL SONAR OPTIONS</a></li><li><a href="#3">TRANSMIT ARRAY PROPERTIES</a></li><li><a href="#4">RECEIVE ARRAY PROPERTIES</a></li><li><a href="#5">IMAGING VOLUME PROPERTIES</a></li><li><a href="#6">TEMPORAL SAMPLING PROPERTIES</a></li><li><a href="#7">TARGET COORDINATES</a></li><li><a href="#8">THE TRANSMIT PULSE</a></li><li><a href="#9">THE RECEIVED SIGNAL</a></li><li><a href="#10">ARRAY SHADING FUNCTION</a></li><li><a href="#11">BASEBANDING</a></li><li><a href="#12">RANGE COMPRESSION</a></li><li><a href="#13">NEAR-FIELD COMPENSATION</a></li><li><a href="#14">FREQUENCY DOMAIN BEAMFORMING</a></li><li><a href="#15">TEMPORAL DECIMATION</a></li></ul></div><h2>GENERAL OPTIONS<a name="1"></a></h2><pre class="codeinput">close <span class="string">all</span>
+clear <span class="string">all</span>
+clc
+
+<span class="comment">% Figure print parameters</span>
+szAxScale = 20;
+szAxLabel1 = 20;
+szAxLabel2 = 14;
+
+<span class="comment">% Automatic near field compensation</span>
+autoNFComp = 1;
+
+<span class="comment">% Debug mode</span>
+debug = 0;
+</pre><h2>GENERAL SONAR OPTIONS<a name="2"></a></h2><pre class="codeinput">c = 1500; <span class="comment">% - speed of propagation</span>
+f0 = 130e3; <span class="comment">% - start frequency</span>
+f1 = 330e3; <span class="comment">% - stop frequency</span>
+Tp = 1.5e-3; <span class="comment">% - Pulse duration</span>
+
+<span class="comment">% Derived options:</span>
+fc = 0.5*(f0+f1); <span class="comment">% Centre frequency</span>
+B = f1 - f0; <span class="comment">% - Total bandwidth</span>
+B0 = B/2; <span class="comment">% - Baseband bandwidth</span>
+lambda_c = c/fc; <span class="comment">% Wavelength at centre frequency</span>
+lambda_max = c/f0; <span class="comment">% Wavelength at start frequency</span>
+lambda_min = c/f1; <span class="comment">% Wavelength at stop frequency</span>
+</pre><h2>TRANSMIT ARRAY PROPERTIES<a name="3"></a></h2><pre class="codeinput">tx.M = 32; <span class="comment">% - number of elements</span>
+tx.d = 25e-3; <span class="comment">% - inter-element spacing</span>
+tx.a = tx.d; <span class="comment">% - element width</span>
+tx.N = 31; <span class="comment">% - number of beams</span>
+tx.Pos.xOffset = 0;
+tx.Pos.yOffset = 0;
+tx.Pos.zOffset = 0;
+tx.Ref = tx.M/2 + 1;
+
+<span class="comment">% Derived properties:</span>
+tx.D = tx.d*tx.M;
+<span class="keyword">if</span>( tx.N &gt; (2*tx.M - 1) || ~mod(tx.N,2) ) tx.N = 2*tx.M - 1; <span class="keyword">end</span>; <span class="comment">% - number of beams (ensure it is within the theoretical limit)</span>
+tx.Pos.x = tx.Pos.xOffset + zeros(1, tx.M); <span class="comment">% - position vector of each element</span>
+tx.Pos.y = tx.Pos.yOffset + zeros(1, tx.M);
+tx.Pos.z = tx.Pos.zOffset + ((0:tx.M-1) - tx.M/2).*tx.d;
+
+tx.Beam.BFraction = 0.7;
+tx.Beam.B = tx.Beam.BFraction*(f1 - f0)/tx.N;
+tx.Beam.f0 = f0 + ( 0:(tx.N - 1)) * ((f1 - f0)/tx.N); <span class="comment">% - beam bandwidth (start frequency and stop frequency) vector</span>
+tx.Beam.f1 = f0 + ( 0:(tx.N - 1)) * ((f1 - f0)/tx.N) + tx.Beam.B;
+tx.Beam.fc = 0.5*(tx.Beam.f1 + tx.Beam.f0);
+tx.Beam.lambda =  c./tx.Beam.f1;
+tx.Beam.thetaMax = 2 * asin( tx.Beam.lambda/(2*tx.d) ); <span class="comment">% - divergence angle</span>
+tx.Beam.theta3dB = asin( tx.Beam.lambda/tx.D );
+tx.Beam.dtheta = min(tx.Beam.thetaMax)/tx.N;
+tx.Beam.angle = ( -(tx.N-1)/2:(tx.N-1)/2 ) * tx.Beam.dtheta;
+tx.Beam.Fresnel = (tx.D)^2/min(tx.Beam.lambda);
+</pre><h2>RECEIVE ARRAY PROPERTIES<a name="4"></a></h2><pre class="codeinput">rx.M = 64; <span class="comment">% - number of elements</span>
+rx.d = 12.5e-3; <span class="comment">% - inter-element spacing</span>
+rx.a = rx.d; <span class="comment">% - element width</span>
+rx.N = 2*rx.M - 1; <span class="comment">% - number of beams</span>
+rx.Shading.Type = <span class="string">'hann'</span>; <span class="comment">% - shading function</span>
+rx.AmpError.Type = <span class="string">'none'</span>; <span class="comment">% - array amplitude error vector</span>
+rx.PhaseError.Type = <span class="string">'none'</span>; <span class="comment">% - array phase error vector</span>
+rx.Pos.xOffset = 0;
+rx.Pos.yOffset = 0;
+rx.Pos.zOffset = -(tx.D*1.05)/2;
+rx.Ref = rx.M/2 + 1;
+
+<span class="comment">% Derived properties:</span>
+rx.D = rx.M*rx.d;
+<span class="keyword">if</span>(rx.N &gt; (2*rx.M - 1) || ~mod(rx.N,2) ) rx.N = (2*rx.M - 1); <span class="keyword">end</span>; <span class="comment">% - number of beams (ensure it is within the theoretical limit)</span>
+rx.Pos.x = rx.Pos.xOffset + zeros(1, rx.M); <span class="comment">% - position vector of each element</span>
+rx.Pos.y = rx.Pos.yOffset + ((0:rx.M-1) - rx.M/2).*rx.d;
+rx.Pos.z = rx.Pos.zOffset + zeros(1, rx.M);
+
+rx.Beam.thetaMax = 2*asin( lambda_min/(2*rx.d) ); <span class="comment">% - array divergence angle</span>
+rx.Beam.theta3dB = asin(lambda_min/rx.D);
+rx.Beam.dtheta = rx.Beam.thetaMax/rx.N;
+rx.Beam.angle = ( -(rx.N - 1)/2:(rx.N - 1)/2 ) * rx.Beam.dtheta;
+rx.Beam.Fresnel = (rx.D)^2/lambda_min;
+</pre><h2>IMAGING VOLUME PROPERTIES<a name="5"></a></h2><pre class="codeinput">R0 = 3.0; <span class="comment">% - Start range</span>
+R1 = 6.0; <span class="comment">% - stop range</span>
+
+Rc = 0.5*(R0 + R1); <span class="comment">% Focal range</span>
+Y0 = 0.5*Rc*rx.Beam.thetaMax; <span class="comment">% - Width (within the receive array max. steering angle at the given range)</span>
+Z0 = 0.5*Rc*min(tx.Beam.thetaMax); <span class="comment">% - Height (within the transmit array max steering angle at the given range)</span>
+
+NearTarget.Pos.x = R0; NearTarget.Pos.y = 0; NearTarget.Pos.z = 0;
+Tx2Target.x = NearTarget.Pos.x - tx.Pos.x(tx.Ref);
+Tx2Target.y = NearTarget.Pos.y - tx.Pos.y(tx.Ref);
+Tx2Target.z = NearTarget.Pos.z - tx.Pos.z(tx.Ref);
+Tx2Target.range = sqrt(Tx2Target.x^2 + Tx2Target.y^2 + Tx2Target.z^2);
+
+Rx2Target.x = NearTarget.Pos.x - rx.Pos.x(rx.Ref);
+Rx2Target.y = NearTarget.Pos.y - rx.Pos.y(rx.Ref);
+Rx2Target.z = NearTarget.Pos.z - rx.Pos.z(rx.Ref);
+Rx2Target.range = sqrt(Rx2Target.x^2 + Rx2Target.y^2 + Rx2Target.z^2);
+
+X0 = (Tx2Target.range + Rx2Target.range);
+
+FarTarget.Pos.x = R1; FarTarget.Pos.y = Y0; FarTarget.Pos.z = Z0;
+Tx2Target.x = FarTarget.Pos.x - tx.Pos.x(tx.Ref);
+Tx2Target.y = FarTarget.Pos.y - tx.Pos.y(tx.Ref);
+Tx2Target.z = FarTarget.Pos.z - tx.Pos.z(tx.Ref);
+Tx2Target.range = sqrt(Tx2Target.x^2 + Tx2Target.y^2 + Tx2Target.z^2);
+
+Rx2Target.x = FarTarget.Pos.x - rx.Pos.x(rx.Ref);
+Rx2Target.y = FarTarget.Pos.y - rx.Pos.y(rx.Ref);
+Rx2Target.z = FarTarget.Pos.z - rx.Pos.z(rx.Ref);
+Rx2Target.range = sqrt(Rx2Target.x^2 + Rx2Target.y^2 + Rx2Target.z^2);
+
+X1 = (Tx2Target.range + Rx2Target.range);
+
+Xc = 0.5*(X0+X1);
+</pre><h2>TEMPORAL SAMPLING PROPERTIES<a name="6"></a></h2><pre class="codeinput">fs = 5*f1; <span class="comment">% - Temporal sampling frequency</span>
+dt = 1/fs; <span class="comment">% - Temporal Sampling interval</span>
+
+Ts = X0/c; <span class="comment">% - sampling start time</span>
+Te = X1/c + 1.1*Tp; <span class="comment">% - Sampling end time</span>
+
+n = 2*ceil((Te - Ts)/(2*dt)); <span class="comment">% - number of temporal samples</span>
+
+df = 1/(n*dt); <span class="comment">% - frequency rate</span>
+
+t = Ts + (0:n-1)*dt; <span class="comment">% - time vector</span>
+f = df*(-n/2:n/2-1); <span class="comment">% - frequency vector</span>
+</pre><h2>TARGET COORDINATES<a name="7"></a></h2><pre class="codeinput">targets.N = 3;
+targets.Pos.x = [ Rc, Rc, Rc];
+targets.Pos.y = [ 0, 0.5*Y0, 0];
+targets.Pos.z = [ 0, 0.35*Z0, -0.35*Z0];
+targets.Pos.r = sqrt(targets.Pos.x.^2 + targets.Pos.y.^2 + targets.Pos.z.^2);
+targets.Pos.phi = pi/2 - acos(targets.Pos.z./targets.Pos.r);
+targets.Pos.theta = atan(targets.Pos.y./targets.Pos.r);
+</pre><h2>THE TRANSMIT PULSE<a name="8"></a></h2><pre class="codeinput">K = 0.5*tx.Beam.B/Tp;
+
+pt = zeros(tx.M, n);
+
+<span class="keyword">for</span> i = 1:tx.M
+    cValue = zeros(1, n);
+    <span class="keyword">for</span> j = 1:tx.N
+        beamDelay = (tx.M - i)*tx.d/c * sin(tx.Beam.angle(j));
+
+        <span class="keyword">if</span>(Rc &lt; tx.Beam.Fresnel)
+            fresnelComp = ((i - tx.M/2 - 1)*tx.d)/(2*Rc)/c;
+        <span class="keyword">else</span>
+            fresnelComp = 0.0;
+        <span class="keyword">end</span>;
+
+        td = t - Ts + fresnelComp - beamDelay - (n*dt - Tp)/2;
+
+        beta = tx.Beam.f0(j);
+
+        pha = 2*pi*(beta*td + K*td.^2);
+
+        cValue = cValue + exp(1j*pha).*(td &gt;= 0 &amp; td &lt;= Tp);<span class="comment">%.*(exp(-1j*2*pi*tx.Beam.fc(j)*(t-Ts)));</span>
+    <span class="keyword">end</span>;
+
+    pt(i, :) = cValue;
+
+    plot(t-Ts, real(cValue));
+    title([<span class="string">'Transmitted pulse: Element '</span>, num2str(i)], <span class="string">'fontsize'</span>, szAxLabel2)
+    xlabel(<span class="string">'Time, t [s]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+    ylabel(<span class="string">'Amplitude (Real), p(t)'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+    h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+    set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+    axis <span class="string">'square'</span>; axis <span class="string">tight</span>;
+    pause(0.2);
+<span class="keyword">end</span>;
+
+Pf = fftshift(fft(pt(tx.Ref,:)));
+figure(<span class="string">'name'</span>, <span class="string">'Magnitude spectrum of transmitted signal'</span>)
+plot(f/1000, abs(Pf));
+title(<span class="string">'Magnitude spectrum of transmitted pulse'</span>, <span class="string">'fontsize'</span>, szAxLabel2)
+xlabel(<span class="string">'Frequency, f [kHz]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+ylabel(<span class="string">'Magnitude, |P(f)|'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+axis <span class="string">'square'</span>; axis <span class="string">tight</span>
+</pre><h2>THE RECEIVED SIGNAL<a name="9"></a></h2><pre class="codeinput"><span class="comment">% 2D array to hold the signal received by the receiver array</span>
+stu = zeros(rx.M, n);
+
+<span class="keyword">for</span> i = 1:tx.N
+    fprintf(<span class="string">'Simulating received signal from transmit beam at %.2f deg\n'</span>,tx.Beam.angle(i)*180/pi);
+    <span class="keyword">for</span> j = 1:targets.N
+        withinTxBeam = (abs(targets.Pos.phi(j) - tx.Beam.angle(i)) &lt;= tx.Beam.theta3dB(i)/2);
+
+        <span class="keyword">for</span> k = 1:rx.M
+            <span class="comment">% Vector connecting targets to transmitter</span>
+            Tx2Target.x = targets.Pos.x(j) - tx.Pos.x(tx.Ref);
+            Tx2Target.y = targets.Pos.y(j) - tx.Pos.y(tx.Ref);
+            Tx2Target.z = targets.Pos.z(j) - tx.Pos.z(tx.Ref);
+            Tx2Target.range = sqrt(Tx2Target.x^2 + Tx2Target.y^2 + Tx2Target.z^2);
+
+            <span class="comment">% Vector connecting target to kth receiver</span>
+            Rx2Target.x = targets.Pos.x(j) - rx.Pos.x(k);
+            Rx2Target.y = targets.Pos.y(j) - rx.Pos.y(k);
+            Rx2Target.z = targets.Pos.z(j) - rx.Pos.z(k);
+            Rx2Target.range = sqrt(Rx2Target.x^2 + Rx2Target.y^2 + Rx2Target.z^2);
+
+            <span class="comment">% Two-way delay from transmitter to target to kth element</span>
+            R = Tx2Target.range + Rx2Target.range;
+            tau = R/c;
+            td = t - tau;
+
+            <span class="comment">% The phase contribution of the jth target</span>
+            beta = tx.Beam.f0(i);
+            pha = 2*pi*(beta*td + K*td.^2);
+
+            stu(k,:) = stu(k,:) + exp(1j*pha).*(td &gt;= 0 &amp; td &lt;= Tp) * withinTxBeam;
+        <span class="keyword">end</span>;
+    <span class="keyword">end</span>;
+<span class="keyword">end</span>;
+
+G = real(stu);
+figure(<span class="string">'name'</span>, <span class="string">'The received signal'</span>)
+colormap(hot(256));
+imagesc(t, 1:rx.M, G);
+title(<span class="string">'The received signal'</span>, <span class="string">'fontsize'</span>, szAxLabel2)
+xlabel(<span class="string">'Time, t [sec]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+ylabel(<span class="string">'Receiver element index'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+axis <span class="string">'square'</span>; axis <span class="string">'xy'</span>; colorbar
+h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+</pre><h2>ARRAY SHADING FUNCTION<a name="10"></a></h2><pre class="codeinput"><span class="comment">% Applying the array function to the received data</span>
+<span class="keyword">switch</span> rx.Shading.Type
+    <span class="keyword">case</span> <span class="string">'rect'</span>
+        w = ones(rx.M, 1);
+    <span class="keyword">case</span> <span class="string">'hamming'</span>
+        w = hamming(rx.M);
+    <span class="keyword">case</span> <span class="string">'hann'</span>
+        w = hann(rx.M);
+    <span class="keyword">case</span> <span class="string">'blackman-harris'</span>
+        w = window(@blackmanharris, rx.M);
+    <span class="keyword">case</span> <span class="string">'triangle'</span>
+        w = window(@triang, rx.M);
+    <span class="keyword">case</span> <span class="string">'chebyshev'</span>
+        w = window(@chebwin, rx.M, 100);
+    <span class="keyword">otherwise</span>
+        w = ones(rx.M, 1);
+<span class="keyword">end</span>;
+
+w = w*ones(1, n);
+stu = stu.*w;
+</pre><h2>BASEBANDING<a name="11"></a></h2><pre class="codeinput"><span class="comment">% Baseband conversion</span>
+stuphi = zeros(rx.M, n, tx.N);
+
+<span class="keyword">for</span> i = 1:tx.N
+    <span class="comment">%fprintf('Beam band: %.2f kHz - %.2f kHz\n', tx.Beam.f0(i)/1000.0, tx.Beam.f1(i)/1000);</span>
+
+    bbKernel = ones(rx.M, 1)*exp(-1j*2*pi*tx.Beam.fc(i)*t);
+    temp = stu.*bbKernel;
+
+    ftemp = fftshift((fft(temp.')).',2).*(ones(rx.M,1)*(abs(f) &lt;= tx.Beam.B/2));
+
+    stuphi(:, :, i) = (ifft(fftshift(ftemp,2).')).';
+
+    <span class="keyword">if</span> (i == (tx.N-1)/2+1 &amp;&amp; debug == 1)
+        figure(<span class="string">'name'</span>, <span class="string">'The received signal'</span>)
+        plot(t, real(stu(rx.Ref,:)));
+        title([<span class="string">'Received signal at '</span>, num2str(tx.Beam.angle(i)*180/pi), <span class="string">' deg'</span>], <span class="string">'fontsize'</span>, szAxLabel2)
+        xlabel(<span class="string">'Time, t [s]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+        ylabel(<span class="string">'Amplitude (Real), p(t)'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+        h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+        set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+        axis <span class="string">'square'</span>; axis <span class="string">tight</span>;
+
+        figure(<span class="string">'name'</span>, <span class="string">'The received signal after basebanding'</span>)
+        plot(t, real(stuphi(rx.Ref,:,i)));
+        title([<span class="string">'Received signal after basebanding at '</span>, num2str(tx.Beam.angle(i)*180/pi), <span class="string">' deg'</span>], <span class="string">'fontsize'</span>, szAxLabel2)
+        xlabel(<span class="string">'Time, t [s]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+        ylabel(<span class="string">'Amplitude (Real), p(t)'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+        h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+        set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+        axis <span class="string">'square'</span>; axis <span class="string">tight</span>;
+
+        figure(<span class="string">'name'</span>, <span class="string">'Magnitude spectrum of basebanded received signal'</span>)
+        plot(f/1000, abs(ftemp(rx.Ref,:)));
+        title(<span class="string">'Magnitude spectrum of basebanded received signal'</span>, <span class="string">'fontsize'</span>, szAxLabel2)
+        xlabel(<span class="string">'Frequency, f [kHz]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+        ylabel(<span class="string">'Magnitude, |P(f)|'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+        h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+        set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+        axis <span class="string">'square'</span>; axis <span class="string">tight</span>
+    <span class="keyword">end</span>;
+
+<span class="comment">%     G = real(stuphi(:,:,i));</span>
+<span class="comment">%     colormap(hot(256));</span>
+<span class="comment">%     imagesc(t, 1:rx.M, G);</span>
+<span class="comment">%     title('The received signal after basebanding', 'fontsize', szAxLabel2)</span>
+<span class="comment">%     xlabel('Time, t [sec]', 'fontsize', szAxLabel1)</span>
+<span class="comment">%     ylabel('Receive aperture, u [m]', 'fontsize', szAxLabel1)</span>
+<span class="comment">%     axis 'square'; axis 'xy'; colorbar</span>
+<span class="comment">%     h_fig=get(gcf,'CurrentAxes');</span>
+<span class="comment">%     set(h_fig, 'fontsize', szAxScale);</span>
+<span class="comment">%     pause(5);</span>
+<span class="keyword">end</span>;
+</pre><pre class="codeoutput">Out of memory. Type HELP MEMORY for your options.
+
+Error in SinglePingVolumetricSonar (line 291)
+    stuphi(:, :, i) = (ifft(fftshift(ftemp,2).')).';
+</pre><h2>RANGE COMPRESSION<a name="12"></a></h2><pre class="codeinput">td = t-Ts;
+<span class="keyword">for</span> i = 1:tx.N
+    beta = tx.Beam.f0(i);
+
+    pha = 2*pi*(beta*td + K*td.^2);
+    pt = exp(1j*pha).*(td &gt;= 0 &amp; td &lt;= Tp);
+
+    pt = pt.*(exp(-1j*2*pi*tx.Beam.fc(i)*td)); <span class="comment">% Basebanding</span>
+    Pf = fftshift(fft(pt));
+
+    Sfkuphi = fftshift((fft(stuphi(:,:,i).')).',2);
+    temp = Sfkuphi.*(ones(rx.M, 1)*conj(Pf));
+
+    stuphi(:, :, i) = (ifft(fftshift(temp,2).')).';
+
+    <span class="keyword">if</span> (i &lt; 4 &amp;&amp; debug == 1)
+        G = abs(stuphi(:, :, i));
+        figure(<span class="string">'name'</span>,[<span class="string">'Range compression image for beam '</span>, num2str(tx.Beam.angle(i)*180/pi), <span class="string">' deg'</span>])
+        colormap(hot(256));
+        imagesc(c*t/2, 1:rx.N, G);
+        title([<span class="string">'2D image of range compressed data for beam '</span>,num2str(tx.Beam.angle(i)*180/pi), <span class="string">' deg'</span>], <span class="string">'fontsize'</span>, szAxLabel2)
+        xlabel(<span class="string">'Range, ct [m]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+        ylabel(<span class="string">'Angle, \theta [deg]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+        axis <span class="string">'square'</span>; axis <span class="string">'xy'</span>; colorbar
+        h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+        set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+        pause(2)
+    <span class="keyword">end</span>;
+<span class="keyword">end</span>;
+</pre><h2>NEAR-FIELD COMPENSATION<a name="13"></a></h2><pre class="codeinput">RxToFocalRange.x = Rc - rx.Pos.x(rx.Ref);
+RxToFocalRange.y = -rx.Pos.y(rx.Ref);
+RxToFocalRange.z = -rx.Pos.z(rx.Ref);
+RxToFocalRange.r = sqrt(RxToFocalRange.x^2 + RxToFocalRange.y^2 + RxToFocalRange.z^2);
+
+<span class="keyword">if</span> RxToFocalRange.r &lt; rx.Beam.Fresnel &amp;&amp; autoNFComp == 1
+    <span class="keyword">for</span> i = 1:tx.N
+        Sfu = fftshift((fft(stuphi(:, :, i).')).', 2);
+
+        <span class="comment">% Compensation for near-field effects</span>
+        compFilter = zeros(rx.M, n);
+        <span class="keyword">for</span> k = -rx.M/2:rx.M/2-1
+            td_comp = ((k*rx.d).^2/(2*RxToFocalRange.r))/c;
+            compFilter(k+rx.M/2+1, :) = exp(+1j*2*pi*(f+tx.Beam.fc(i))*td_comp);
+        <span class="keyword">end</span>;
+
+        Sfu = Sfu.*compFilter;
+
+        stuphi(:,:,i) = (ifft(fftshift(Sfu,2).')).';
+
+        <span class="keyword">if</span> (i &lt; 4 &amp;&amp; debug == 1)
+            G = real(stuphi(:,:,i));
+            figure(<span class="string">'name'</span>, [<span class="string">'Near field compensation at '</span>, num2str(tx.Beam.angle(i)*180/pi),<span class="string">' deg'</span>])
+            colormap(hot(256));
+            imagesc(c*t/2, 1:rx.M, G);
+            title([<span class="string">'Near field compensation at '</span>, num2str(tx.Beam.angle(i)*180/pi),<span class="string">' deg'</span>], <span class="string">'fontsize'</span>, szAxLabel2)
+            xlabel(<span class="string">'Time, t [sec]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+            ylabel(<span class="string">'Receiver element index'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+            axis <span class="string">'square'</span>; axis <span class="string">'xy'</span>; colorbar
+            h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+            set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+        <span class="keyword">end</span>;
+    <span class="keyword">end</span>;
+<span class="keyword">end</span>;
+</pre><h2>FREQUENCY DOMAIN BEAMFORMING<a name="14"></a></h2><pre class="codeinput"><span class="comment">% Zero pad in the spatial domain</span>
+
+stuphi = [ zeros(floor((rx.N - rx.M)/2),n,tx.N); stuphi; zeros(ceil((rx.N - rx.M)/2),n, tx.N) ];
+
+<span class="keyword">for</span> i = 1:tx.N
+    Sfu = fftshift((fft(stuphi(:,:,i).')).');
+    Sfku = fftshift(fft(Sfu),1);
+    Stku = ifft(fftshift(Sfku.',1)).';
+
+    stuphi(:,:,i) = Stku;
+
+    <span class="keyword">if</span> (i &lt; 4 &amp;&amp; debug == 1)
+        G = abs(Stku);
+        figure(<span class="string">'name'</span>,[<span class="string">'After beamforming at '</span>, num2str(tx.Beam.angle(i)*180/pi),<span class="string">' deg'</span>])
+        colormap(hot(256));
+        <span class="comment">% imagesc(G);</span>
+        imagesc(c*t/2, 1:rx.N, G);
+        title([<span class="string">'Beam-time domain at '</span>, num2str(tx.Beam.angle(i)*180/pi),<span class="string">' deg'</span>], <span class="string">'fontsize'</span>, szAxLabel2)
+        xlabel(<span class="string">'Range, ct [m]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+        ylabel(<span class="string">'Angle, \theta [deg]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+        axis <span class="string">'square'</span>; axis <span class="string">'xy'</span>; colorbar
+        h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+        set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+    <span class="keyword">end</span>;
+<span class="keyword">end</span>;
+</pre><h2>TEMPORAL DECIMATION<a name="15"></a></h2><pre class="codeinput">decimate.Ratio = 2*floor(fs/(2*(5*tx.Beam.B)));
+decimate.Fs = fs/decimate.Ratio;
+decimate.n = 2*floor(n/(2*decimate.Ratio));
+decimate.dt = 1/decimate.Fs;
+
+stuphiDecimated = zeros(size(stuphi,1), decimate.n, size(stuphi,3));
+
+v = floor( linspace(1, n, decimate.n) );
+
+<span class="keyword">for</span> i = 1:tx.N
+    <span class="keyword">for</span> j = 1:rx.N
+        <span class="keyword">for</span> k = 1:decimate.n
+            stuphiDecimated(j, k, i) = stuphi( j, v(k), i );
+        <span class="keyword">end</span>;
+    <span class="keyword">end</span>;
+<span class="keyword">end</span>;
+
+nR = 2*ceil(((X1 - X0)/c)/(2*decimate.dt));
+
+stuphiTargetRegion = zeros(size(G,1), nR, size(G,3));
+
+<span class="keyword">for</span> i = 1:tx.N
+    <span class="keyword">for</span> j = 1:rx.N
+        <span class="keyword">for</span> k = 1:nR
+            stuphiTargetRegion(j,k,i) = stuphiDecimated(j,k,i);
+        <span class="keyword">end</span>;
+    <span class="keyword">end</span>;
+<span class="keyword">end</span>;
+
+newD = rx.d*(rx.N);
+dtheta = asind(lambda_min/newD);
+
+<span class="keyword">if</span>(tx.N &gt; 1)
+    figure
+    H = vol3d(<span class="string">'cdata'</span>, abs(stuphiTargetRegion), <span class="string">'texture'</span>, <span class="string">'3D'</span>, <span class="string">'YData'</span>, (-rx.N/2:rx.N/2-1)*dtheta, <span class="string">'ZData'</span>, tx.Beam.angle*180/pi, <span class="string">'XData'</span>, (Ts+(0:nR-1)*decimate.dt)*c/2);
+    view(3);
+    xlabel(<span class="string">'Range, ct [m]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+    ylabel(<span class="string">'Angle, \theta [deg]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+    zlabel(<span class="string">'Elevation, \phi [deg]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+    axis <span class="string">tight</span>; axis <span class="string">'square'</span>;  colorbar; grid <span class="string">on</span>
+    h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+    set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+    alphamap(<span class="string">'rampup'</span>);
+    <span class="comment">%alphamap(0.5.*alphamap);</span>
+<span class="keyword">else</span>
+    G = abs(stuphiTargetRegion);
+    figure(<span class="string">'name'</span>, <span class="string">'Image'</span>)
+    colormap(hot(256));
+    <span class="comment">% imagesc(G);</span>
+    imagesc((Ts+(0:nR-1)*decimate.dt)*c/2, (-rx.N/2:rx.N/2-1)*dtheta, G);
+    title(<span class="string">'Beam-time domain'</span>, <span class="string">'fontsize'</span>, szAxLabel2)
+    xlabel(<span class="string">'Range, ct [m]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+    ylabel(<span class="string">'Angle, \theta [deg]'</span>, <span class="string">'fontsize'</span>, szAxLabel1)
+    axis <span class="string">'square'</span>; axis <span class="string">'xy'</span>; colorbar;
+    h_fig=get(gcf,<span class="string">'CurrentAxes'</span>);
+    set(h_fig, <span class="string">'fontsize'</span>, szAxScale);
+<span class="keyword">end</span>;
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2013a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% 3D VOLUMETRIC SONAR IMAGING USING THE SINGLE PING METHODOLOGY
+% Each elevation beam is allocated a given frequency.  The transmitted
+% waveform is generated such that all the beams are encoded in one pulse.
+% The 3D sonar volume is built by processing the returns from each beam
+% using conventional 2D beamforming techniques.  Particularly, received
+% data are basebanded prior to any focusing.  Also, pulse compression is
+% preceeds beamforming.
+
+%% GENERAL OPTIONS
+close all
+clear all
+clc
+
+% Figure print parameters
+szAxScale = 20;
+szAxLabel1 = 20;
+szAxLabel2 = 14;
+
+% Automatic near field compensation
+autoNFComp = 1; 
+
+% Debug mode
+debug = 0;
+
+%% GENERAL SONAR OPTIONS
+
+c = 1500; % - speed of propagation
+f0 = 130e3; % - start frequency
+f1 = 330e3; % - stop frequency
+Tp = 1.5e-3; % - Pulse duration
+
+% Derived options:
+fc = 0.5*(f0+f1); % Centre frequency
+B = f1 - f0; % - Total bandwidth
+B0 = B/2; % - Baseband bandwidth
+lambda_c = c/fc; % Wavelength at centre frequency
+lambda_max = c/f0; % Wavelength at start frequency
+lambda_min = c/f1; % Wavelength at stop frequency
+
+%% TRANSMIT ARRAY PROPERTIES
+
+tx.M = 32; % - number of elements
+tx.d = 25e-3; % - inter-element spacing
+tx.a = tx.d; % - element width
+tx.N = 31; % - number of beams
+tx.Pos.xOffset = 0;
+tx.Pos.yOffset = 0;
+tx.Pos.zOffset = 0;
+tx.Ref = tx.M/2 + 1;
+
+% Derived properties:
+tx.D = tx.d*tx.M;
+if( tx.N > (2*tx.M - 1) || ~mod(tx.N,2) ) tx.N = 2*tx.M - 1; end; % - number of beams (ensure it is within the theoretical limit)
+tx.Pos.x = tx.Pos.xOffset + zeros(1, tx.M); % - position vector of each element
+tx.Pos.y = tx.Pos.yOffset + zeros(1, tx.M);
+tx.Pos.z = tx.Pos.zOffset + ((0:tx.M-1) - tx.M/2).*tx.d;
+
+tx.Beam.BFraction = 0.7;
+tx.Beam.B = tx.Beam.BFraction*(f1 - f0)/tx.N;
+tx.Beam.f0 = f0 + ( 0:(tx.N - 1)) * ((f1 - f0)/tx.N); % - beam bandwidth (start frequency and stop frequency) vector
+tx.Beam.f1 = f0 + ( 0:(tx.N - 1)) * ((f1 - f0)/tx.N) + tx.Beam.B;
+tx.Beam.fc = 0.5*(tx.Beam.f1 + tx.Beam.f0);
+tx.Beam.lambda =  c./tx.Beam.f1;
+tx.Beam.thetaMax = 2 * asin( tx.Beam.lambda/(2*tx.d) ); % - divergence angle
+tx.Beam.theta3dB = asin( tx.Beam.lambda/tx.D );
+tx.Beam.dtheta = min(tx.Beam.thetaMax)/tx.N;
+tx.Beam.angle = ( -(tx.N-1)/2:(tx.N-1)/2 ) * tx.Beam.dtheta;
+tx.Beam.Fresnel = (tx.D)^2/min(tx.Beam.lambda);
+
+%% RECEIVE ARRAY PROPERTIES
+
+rx.M = 64; % - number of elements
+rx.d = 12.5e-3; % - inter-element spacing
+rx.a = rx.d; % - element width
+rx.N = 2*rx.M - 1; % - number of beams
+rx.Shading.Type = 'hann'; % - shading function
+rx.AmpError.Type = 'none'; % - array amplitude error vector
+rx.PhaseError.Type = 'none'; % - array phase error vector
+rx.Pos.xOffset = 0;
+rx.Pos.yOffset = 0;
+rx.Pos.zOffset = -(tx.D*1.05)/2;
+rx.Ref = rx.M/2 + 1;
+
+% Derived properties:
+rx.D = rx.M*rx.d;
+if(rx.N > (2*rx.M - 1) || ~mod(rx.N,2) ) rx.N = (2*rx.M - 1); end; % - number of beams (ensure it is within the theoretical limit)
+rx.Pos.x = rx.Pos.xOffset + zeros(1, rx.M); % - position vector of each element
+rx.Pos.y = rx.Pos.yOffset + ((0:rx.M-1) - rx.M/2).*rx.d;
+rx.Pos.z = rx.Pos.zOffset + zeros(1, rx.M);
+
+rx.Beam.thetaMax = 2*asin( lambda_min/(2*rx.d) ); % - array divergence angle
+rx.Beam.theta3dB = asin(lambda_min/rx.D);
+rx.Beam.dtheta = rx.Beam.thetaMax/rx.N;
+rx.Beam.angle = ( -(rx.N - 1)/2:(rx.N - 1)/2 ) * rx.Beam.dtheta;
+rx.Beam.Fresnel = (rx.D)^2/lambda_min;
+
+%% IMAGING VOLUME PROPERTIES
+
+R0 = 3.0; % - Start range
+R1 = 6.0; % - stop range
+
+Rc = 0.5*(R0 + R1); % Focal range
+Y0 = 0.5*Rc*rx.Beam.thetaMax; % - Width (within the receive array max. steering angle at the given range)
+Z0 = 0.5*Rc*min(tx.Beam.thetaMax); % - Height (within the transmit array max steering angle at the given range)
+
+NearTarget.Pos.x = R0; NearTarget.Pos.y = 0; NearTarget.Pos.z = 0;
+Tx2Target.x = NearTarget.Pos.x - tx.Pos.x(tx.Ref);
+Tx2Target.y = NearTarget.Pos.y - tx.Pos.y(tx.Ref);
+Tx2Target.z = NearTarget.Pos.z - tx.Pos.z(tx.Ref);
+Tx2Target.range = sqrt(Tx2Target.x^2 + Tx2Target.y^2 + Tx2Target.z^2);
+
+Rx2Target.x = NearTarget.Pos.x - rx.Pos.x(rx.Ref);
+Rx2Target.y = NearTarget.Pos.y - rx.Pos.y(rx.Ref);
+Rx2Target.z = NearTarget.Pos.z - rx.Pos.z(rx.Ref);
+Rx2Target.range = sqrt(Rx2Target.x^2 + Rx2Target.y^2 + Rx2Target.z^2);
+
+X0 = (Tx2Target.range + Rx2Target.range);
+
+FarTarget.Pos.x = R1; FarTarget.Pos.y = Y0; FarTarget.Pos.z = Z0;
+Tx2Target.x = FarTarget.Pos.x - tx.Pos.x(tx.Ref);
+Tx2Target.y = FarTarget.Pos.y - tx.Pos.y(tx.Ref);
+Tx2Target.z = FarTarget.Pos.z - tx.Pos.z(tx.Ref);
+Tx2Target.range = sqrt(Tx2Target.x^2 + Tx2Target.y^2 + Tx2Target.z^2);
+
+Rx2Target.x = FarTarget.Pos.x - rx.Pos.x(rx.Ref);
+Rx2Target.y = FarTarget.Pos.y - rx.Pos.y(rx.Ref);
+Rx2Target.z = FarTarget.Pos.z - rx.Pos.z(rx.Ref);
+Rx2Target.range = sqrt(Rx2Target.x^2 + Rx2Target.y^2 + Rx2Target.z^2);
+
+X1 = (Tx2Target.range + Rx2Target.range);
+
+Xc = 0.5*(X0+X1);
+
+%% TEMPORAL SAMPLING PROPERTIES
+
+fs = 5*f1; % - Temporal sampling frequency
+dt = 1/fs; % - Temporal Sampling interval
+
+Ts = X0/c; % - sampling start time
+Te = X1/c + 1.1*Tp; % - Sampling end time
+
+n = 2*ceil((Te - Ts)/(2*dt)); % - number of temporal samples
+
+df = 1/(n*dt); % - frequency rate
+
+t = Ts + (0:n-1)*dt; % - time vector
+f = df*(-n/2:n/2-1); % - frequency vector
+
+%% TARGET COORDINATES
+
+targets.N = 3;
+targets.Pos.x = [ Rc, Rc, Rc];
+targets.Pos.y = [ 0, 0.5*Y0, 0];
+targets.Pos.z = [ 0, 0.35*Z0, -0.35*Z0];
+targets.Pos.r = sqrt(targets.Pos.x.^2 + targets.Pos.y.^2 + targets.Pos.z.^2);
+targets.Pos.phi = pi/2 - acos(targets.Pos.z./targets.Pos.r);
+targets.Pos.theta = atan(targets.Pos.y./targets.Pos.r);
+
+%% THE TRANSMIT PULSE
+
+K = 0.5*tx.Beam.B/Tp;
+
+pt = zeros(tx.M, n);
+
+for i = 1:tx.M
+    cValue = zeros(1, n);
+    for j = 1:tx.N
+        beamDelay = (tx.M - i)*tx.d/c * sin(tx.Beam.angle(j));
+        
+        if(Rc < tx.Beam.Fresnel) 
+            fresnelComp = ((i - tx.M/2 - 1)*tx.d)/(2*Rc)/c; 
+        else
+            fresnelComp = 0.0;
+        end;
+        
+        td = t - Ts + fresnelComp - beamDelay - (n*dt - Tp)/2;
+        
+        beta = tx.Beam.f0(j);
+        
+        pha = 2*pi*(beta*td + K*td.^2);
+        
+        cValue = cValue + exp(1j*pha).*(td >= 0 & td <= Tp);%.*(exp(-1j*2*pi*tx.Beam.fc(j)*(t-Ts)));        
+    end;
+    
+    pt(i, :) = cValue;
+    
+    plot(t-Ts, real(cValue));
+    title(['Transmitted pulse: Element ', num2str(i)], 'fontsize', szAxLabel2)
+    xlabel('Time, t [s]', 'fontsize', szAxLabel1)
+    ylabel('Amplitude (Real), p(t)', 'fontsize', szAxLabel1)
+    h_fig=get(gcf,'CurrentAxes');
+    set(h_fig, 'fontsize', szAxScale);
+    axis 'square'; axis tight;
+    pause(0.2);
+end;
+
+Pf = fftshift(fft(pt(tx.Ref,:)));
+figure('name', 'Magnitude spectrum of transmitted signal')
+plot(f/1000, abs(Pf));
+title('Magnitude spectrum of transmitted pulse', 'fontsize', szAxLabel2)
+xlabel('Frequency, f [kHz]', 'fontsize', szAxLabel1)
+ylabel('Magnitude, |P(f)|', 'fontsize', szAxLabel1)
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+axis 'square'; axis tight
+
+%% THE RECEIVED SIGNAL
+
+% 2D array to hold the signal received by the receiver array
+stu = zeros(rx.M, n);
+
+for i = 1:tx.N
+    fprintf('Simulating received signal from transmit beam at %.2f deg\n',tx.Beam.angle(i)*180/pi);
+    for j = 1:targets.N
+        withinTxBeam = (abs(targets.Pos.phi(j) - tx.Beam.angle(i)) <= tx.Beam.theta3dB(i)/2);
+        
+        for k = 1:rx.M
+            % Vector connecting targets to transmitter
+            Tx2Target.x = targets.Pos.x(j) - tx.Pos.x(tx.Ref);
+            Tx2Target.y = targets.Pos.y(j) - tx.Pos.y(tx.Ref);
+            Tx2Target.z = targets.Pos.z(j) - tx.Pos.z(tx.Ref);
+            Tx2Target.range = sqrt(Tx2Target.x^2 + Tx2Target.y^2 + Tx2Target.z^2);
+
+            % Vector connecting target to kth receiver
+            Rx2Target.x = targets.Pos.x(j) - rx.Pos.x(k);
+            Rx2Target.y = targets.Pos.y(j) - rx.Pos.y(k);
+            Rx2Target.z = targets.Pos.z(j) - rx.Pos.z(k);
+            Rx2Target.range = sqrt(Rx2Target.x^2 + Rx2Target.y^2 + Rx2Target.z^2);
+
+            % Two-way delay from transmitter to target to kth element
+            R = Tx2Target.range + Rx2Target.range;
+            tau = R/c;
+            td = t - tau;
+
+            % The phase contribution of the jth target
+            beta = tx.Beam.f0(i);
+            pha = 2*pi*(beta*td + K*td.^2);
+
+            stu(k,:) = stu(k,:) + exp(1j*pha).*(td >= 0 & td <= Tp) * withinTxBeam;
+        end;
+    end;
+end;
+
+G = real(stu);
+figure('name', 'The received signal')
+colormap(hot(256));
+imagesc(t, 1:rx.M, G);
+title('The received signal', 'fontsize', szAxLabel2)
+xlabel('Time, t [sec]', 'fontsize', szAxLabel1)
+ylabel('Receiver element index', 'fontsize', szAxLabel1)
+axis 'square'; axis 'xy'; colorbar
+h_fig=get(gcf,'CurrentAxes');
+set(h_fig, 'fontsize', szAxScale);
+
+%% ARRAY SHADING FUNCTION
+
+% Applying the array function to the received data
+switch rx.Shading.Type
+    case 'rect'
+        w = ones(rx.M, 1);
+    case 'hamming'
+        w = hamming(rx.M);
+    case 'hann'
+        w = hann(rx.M);
+    case 'blackman-harris'
+        w = window(@blackmanharris, rx.M);
+    case 'triangle'
+        w = window(@triang, rx.M);
+    case 'chebyshev'
+        w = window(@chebwin, rx.M, 100);
+    otherwise
+        w = ones(rx.M, 1);
+end;
+
+w = w*ones(1, n);
+stu = stu.*w;
+
+%% BASEBANDING
+
+% Baseband conversion
+stuphi = zeros(rx.M, n, tx.N);
+
+for i = 1:tx.N
+    %fprintf('Beam band: %.2f kHz - %.2f kHz\n', tx.Beam.f0(i)/1000.0, tx.Beam.f1(i)/1000);
+    
+    bbKernel = ones(rx.M, 1)*exp(-1j*2*pi*tx.Beam.fc(i)*t);
+    temp = stu.*bbKernel;
+    
+    ftemp = fftshift((fft(temp.')).',2).*(ones(rx.M,1)*(abs(f) <= tx.Beam.B/2));
+    
+    stuphi(:, :, i) = (ifft(fftshift(ftemp,2).')).';
+    
+    if (i == (tx.N-1)/2+1 && debug == 1)     
+        figure('name', 'The received signal')
+        plot(t, real(stu(rx.Ref,:)));
+        title(['Received signal at ', num2str(tx.Beam.angle(i)*180/pi), ' deg'], 'fontsize', szAxLabel2)
+        xlabel('Time, t [s]', 'fontsize', szAxLabel1)
+        ylabel('Amplitude (Real), p(t)', 'fontsize', szAxLabel1)
+        h_fig=get(gcf,'CurrentAxes');
+        set(h_fig, 'fontsize', szAxScale);
+        axis 'square'; axis tight;
+        
+        figure('name', 'The received signal after basebanding')
+        plot(t, real(stuphi(rx.Ref,:,i)));
+        title(['Received signal after basebanding at ', num2str(tx.Beam.angle(i)*180/pi), ' deg'], 'fontsize', szAxLabel2)
+        xlabel('Time, t [s]', 'fontsize', szAxLabel1)
+        ylabel('Amplitude (Real), p(t)', 'fontsize', szAxLabel1)
+        h_fig=get(gcf,'CurrentAxes');
+        set(h_fig, 'fontsize', szAxScale);
+        axis 'square'; axis tight;
+        
+        figure('name', 'Magnitude spectrum of basebanded received signal')
+        plot(f/1000, abs(ftemp(rx.Ref,:)));
+        title('Magnitude spectrum of basebanded received signal', 'fontsize', szAxLabel2)
+        xlabel('Frequency, f [kHz]', 'fontsize', szAxLabel1)
+        ylabel('Magnitude, |P(f)|', 'fontsize', szAxLabel1)
+        h_fig=get(gcf,'CurrentAxes');
+        set(h_fig, 'fontsize', szAxScale);
+        axis 'square'; axis tight
+    end;
+    
+%     G = real(stuphi(:,:,i));
+%     colormap(hot(256));
+%     imagesc(t, 1:rx.M, G);
+%     title('The received signal after basebanding', 'fontsize', szAxLabel2)
+%     xlabel('Time, t [sec]', 'fontsize', szAxLabel1)
+%     ylabel('Receive aperture, u [m]', 'fontsize', szAxLabel1)
+%     axis 'square'; axis 'xy'; colorbar
+%     h_fig=get(gcf,'CurrentAxes');
+%     set(h_fig, 'fontsize', szAxScale);
+%     pause(5);
+end;
+
+
+%% RANGE COMPRESSION
+
+td = t-Ts;
+for i = 1:tx.N    
+    beta = tx.Beam.f0(i);
+    
+    pha = 2*pi*(beta*td + K*td.^2);
+    pt = exp(1j*pha).*(td >= 0 & td <= Tp);
+
+    pt = pt.*(exp(-1j*2*pi*tx.Beam.fc(i)*td)); % Basebanding
+    Pf = fftshift(fft(pt));
+    
+    Sfkuphi = fftshift((fft(stuphi(:,:,i).')).',2);
+    temp = Sfkuphi.*(ones(rx.M, 1)*conj(Pf));
+    
+    stuphi(:, :, i) = (ifft(fftshift(temp,2).')).';
+    
+    if (i < 4 && debug == 1)
+        G = abs(stuphi(:, :, i));
+        figure('name',['Range compression image for beam ', num2str(tx.Beam.angle(i)*180/pi), ' deg'])
+        colormap(hot(256));
+        imagesc(c*t/2, 1:rx.N, G);
+        title(['2D image of range compressed data for beam ',num2str(tx.Beam.angle(i)*180/pi), ' deg'], 'fontsize', szAxLabel2)
+        xlabel('Range, ct [m]', 'fontsize', szAxLabel1)
+        ylabel('Angle, \theta [deg]', 'fontsize', szAxLabel1)
+        axis 'square'; axis 'xy'; colorbar
+        h_fig=get(gcf,'CurrentAxes');
+        set(h_fig, 'fontsize', szAxScale);
+        pause(2)
+    end;
+end;
+
+%% NEAR-FIELD COMPENSATION
+
+RxToFocalRange.x = Rc - rx.Pos.x(rx.Ref);
+RxToFocalRange.y = -rx.Pos.y(rx.Ref);
+RxToFocalRange.z = -rx.Pos.z(rx.Ref);
+RxToFocalRange.r = sqrt(RxToFocalRange.x^2 + RxToFocalRange.y^2 + RxToFocalRange.z^2);
+
+if RxToFocalRange.r < rx.Beam.Fresnel && autoNFComp == 1    
+    for i = 1:tx.N
+        Sfu = fftshift((fft(stuphi(:, :, i).')).', 2);
+
+        % Compensation for near-field effects
+        compFilter = zeros(rx.M, n);
+        for k = -rx.M/2:rx.M/2-1
+            td_comp = ((k*rx.d).^2/(2*RxToFocalRange.r))/c;
+            compFilter(k+rx.M/2+1, :) = exp(+1j*2*pi*(f+tx.Beam.fc(i))*td_comp);
+        end;
+
+        Sfu = Sfu.*compFilter;
+
+        stuphi(:,:,i) = (ifft(fftshift(Sfu,2).')).';
+        
+        if (i < 4 && debug == 1)
+            G = real(stuphi(:,:,i));
+            figure('name', ['Near field compensation at ', num2str(tx.Beam.angle(i)*180/pi),' deg'])
+            colormap(hot(256));
+            imagesc(c*t/2, 1:rx.M, G);
+            title(['Near field compensation at ', num2str(tx.Beam.angle(i)*180/pi),' deg'], 'fontsize', szAxLabel2)
+            xlabel('Time, t [sec]', 'fontsize', szAxLabel1)
+            ylabel('Receiver element index', 'fontsize', szAxLabel1)
+            axis 'square'; axis 'xy'; colorbar
+            h_fig=get(gcf,'CurrentAxes');
+            set(h_fig, 'fontsize', szAxScale);
+        end;
+    end;
+end;
+
+%% FREQUENCY DOMAIN BEAMFORMING
+
+% Zero pad in the spatial domain
+
+stuphi = [ zeros(floor((rx.N - rx.M)/2),n,tx.N); stuphi; zeros(ceil((rx.N - rx.M)/2),n, tx.N) ];
+
+for i = 1:tx.N
+    Sfu = fftshift((fft(stuphi(:,:,i).')).');
+    Sfku = fftshift(fft(Sfu),1);
+    Stku = ifft(fftshift(Sfku.',1)).';
+    
+    stuphi(:,:,i) = Stku;
+    
+    if (i < 4 && debug == 1)
+        G = abs(Stku);
+        figure('name',['After beamforming at ', num2str(tx.Beam.angle(i)*180/pi),' deg'])
+        colormap(hot(256));
+        % imagesc(G);
+        imagesc(c*t/2, 1:rx.N, G);
+        title(['Beam-time domain at ', num2str(tx.Beam.angle(i)*180/pi),' deg'], 'fontsize', szAxLabel2)
+        xlabel('Range, ct [m]', 'fontsize', szAxLabel1)
+        ylabel('Angle, \theta [deg]', 'fontsize', szAxLabel1)
+        axis 'square'; axis 'xy'; colorbar
+        h_fig=get(gcf,'CurrentAxes');
+        set(h_fig, 'fontsize', szAxScale);
+    end;
+end;
+
+
+%% TEMPORAL DECIMATION
+
+decimate.Ratio = 2*floor(fs/(2*(5*tx.Beam.B)));
+decimate.Fs = fs/decimate.Ratio;
+decimate.n = 2*floor(n/(2*decimate.Ratio));
+decimate.dt = 1/decimate.Fs;
+
+stuphiDecimated = zeros(size(stuphi,1), decimate.n, size(stuphi,3));
+
+v = floor( linspace(1, n, decimate.n) );
+
+for i = 1:tx.N
+    for j = 1:rx.N
+        for k = 1:decimate.n
+            stuphiDecimated(j, k, i) = stuphi( j, v(k), i );
+        end;
+    end;
+end;
+
+nR = 2*ceil(((X1 - X0)/c)/(2*decimate.dt));
+
+stuphiTargetRegion = zeros(size(G,1), nR, size(G,3));
+
+for i = 1:tx.N
+    for j = 1:rx.N
+        for k = 1:nR
+            stuphiTargetRegion(j,k,i) = stuphiDecimated(j,k,i);
+        end;
+    end;
+end;
+
+newD = rx.d*(rx.N);
+dtheta = asind(lambda_min/newD);
+
+if(tx.N > 1)
+    figure
+    H = vol3d('cdata', abs(stuphiTargetRegion), 'texture', '3D', 'YData', (-rx.N/2:rx.N/2-1)*dtheta, 'ZData', tx.Beam.angle*180/pi, 'XData', (Ts+(0:nR-1)*decimate.dt)*c/2);
+    view(3);
+    xlabel('Range, ct [m]', 'fontsize', szAxLabel1)
+    ylabel('Angle, \theta [deg]', 'fontsize', szAxLabel1)
+    zlabel('Elevation, \phi [deg]', 'fontsize', szAxLabel1)
+    axis tight; axis 'square';  colorbar; grid on
+    h_fig=get(gcf,'CurrentAxes');
+    set(h_fig, 'fontsize', szAxScale); 
+    alphamap('rampup');
+    %alphamap(0.5.*alphamap);
+else
+    G = abs(stuphiTargetRegion);
+    figure('name', 'Image')
+    colormap(hot(256));
+    % imagesc(G);
+    imagesc((Ts+(0:nR-1)*decimate.dt)*c/2, (-rx.N/2:rx.N/2-1)*dtheta, G);
+    title('Beam-time domain', 'fontsize', szAxLabel2)
+    xlabel('Range, ct [m]', 'fontsize', szAxLabel1)
+    ylabel('Angle, \theta [deg]', 'fontsize', szAxLabel1)
+    axis 'square'; axis 'xy'; colorbar;
+    h_fig=get(gcf,'CurrentAxes');
+    set(h_fig, 'fontsize', szAxScale);
+end;
+
+
+##### SOURCE END #####
+--></body></html>
